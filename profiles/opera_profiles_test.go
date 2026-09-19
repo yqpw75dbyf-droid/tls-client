@@ -50,6 +50,41 @@ func TestMappedProfilesResolveToASpec(t *testing.T) {
 	}
 }
 
+// TestNoH3InTCPClientHello guards every profile in the registry against a
+// capture mistake that flags the client in its default configuration: h3 in
+// the ALPN or ALPS of a TCP ClientHello. No real browser advertises h3 over
+// TCP, h3 lives on QUIC; utls strips it when HTTP/3 is disabled, which is
+// exactly why the mistake hides from tests that disable HTTP/3 and surfaces
+// for every default configured client.
+func TestNoH3InTCPClientHello(t *testing.T) {
+	for name, profile := range MappedTLSClients {
+		spec, err := resolveSpec(profile.clientHelloId)
+		if err != nil {
+			continue // TestMappedProfilesResolveToASpec reports these
+		}
+
+		for _, extension := range spec.Extensions {
+			var list []string
+			var where string
+
+			switch v := extension.(type) {
+			case *tls.ALPNExtension:
+				list, where = v.AlpnProtocols, "ALPN"
+			case *tls.ApplicationSettingsExtension:
+				list, where = v.SupportedProtocols, "ALPS"
+			case *tls.ApplicationSettingsExtensionNew:
+				list, where = v.SupportedProtocols, "ALPS"
+			default:
+				continue
+			}
+
+			if slices.Contains(list, "h3") {
+				t.Errorf("%s advertises h3 in its TCP %s (%v): no real browser does", name, where, list)
+			}
+		}
+	}
+}
+
 // TestOperaProfilesMatchTheirChromiumBase is the check on operaProfile. Opera
 // is Chrome relabelled, so the relabelling must not move a byte of the
 // handshake.

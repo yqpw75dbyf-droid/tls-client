@@ -989,7 +989,7 @@ var Chrome_133_PSK = ClientProfile{
 					}},
 					&tls.SessionTicketExtension{},
 					&tls.ApplicationSettingsExtensionNew{
-						SupportedProtocols: []string{"h3", "h2"},
+						SupportedProtocols: []string{"h2"},
 					},
 					&tls.KeyShareExtension{KeyShares: []tls.KeyShare{
 						{Group: tls.CurveID(tls.GREASE_PLACEHOLDER), Data: []byte{0}},
@@ -1014,7 +1014,6 @@ var Chrome_133_PSK = ClientProfile{
 						tls.CurveP384,
 					}},
 					&tls.ALPNExtension{AlpnProtocols: []string{
-						"h3",
 						"h2",
 						"http/1.1",
 					}},
@@ -1099,7 +1098,7 @@ var Chrome_133 = ClientProfile{
 						tls.PKCS1WithSHA512,
 					}},
 					&tls.ApplicationSettingsExtensionNew{
-						SupportedProtocols: []string{"h3", "h2"},
+						SupportedProtocols: []string{"h2"},
 					},
 					&tls.KeyShareExtension{KeyShares: []tls.KeyShare{
 						{Group: tls.CurveID(tls.GREASE_PLACEHOLDER), Data: []byte{0}},
@@ -1117,7 +1116,6 @@ var Chrome_133 = ClientProfile{
 					}},
 					&tls.StatusRequestExtension{},
 					&tls.ALPNExtension{AlpnProtocols: []string{
-						"h3",
 						"h2",
 						"http/1.1",
 					}},

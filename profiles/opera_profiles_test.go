@@ -72,7 +72,11 @@ func TestOperaProfilesMatchTheirChromiumBase(t *testing.T) {
 		// The rest carry their own SpecFactory.
 		{"opera_103 on chrome_117", Opera_103, Chrome_117},
 		{"opera_110 on chrome_124", Opera_110, Chrome_124},
-		{"opera_115 on chrome_130_psk", Opera_115, Chrome_130_PSK},
+		// Opera 105 (Chromium 119) leans up to Chrome_120 for its GREASE ECH,
+		// and Opera 115 (Chromium 130) leans down to Chrome_124 for its Kyber
+		// key share; the version exact Chrome_130_PSK carries no PQ share.
+		{"opera_105 on chrome_120", Opera_105, Chrome_120},
+		{"opera_115 on chrome_124", Opera_115, Chrome_124},
 		// Opera 121 and 127 straddle the Chromium 134 to 143 hole: 121 is on
 		// Chromium 137 and leans down to Chrome_133, 127 is on Chromium 143 and
 		// leans up to Chrome_144. They must not share a base.

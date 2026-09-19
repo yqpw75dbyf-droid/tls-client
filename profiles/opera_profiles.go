@@ -33,7 +33,7 @@ import (
 // Chromium 129 and Chromium 136, so it drifts from +14 to +15 to +16.
 //
 //	Opera  Chromium  base            Opera  Chromium  base
-//	  92     106     Chrome_106       115     130     Chrome_130_PSK
+//	  92     106     Chrome_106       115     130     Chrome_124      ~
 //	  93     107     Chrome_107       116     131     Chrome_131
 //	  94     108     Chrome_108       117     132     Chrome_131      ~
 //	  95     109     Chrome_109       118     133     Chrome_133
@@ -46,7 +46,7 @@ import (
 //	 102     116     Chrome_112  ~    125     141     Chrome_144      ~
 //	 103     117     Chrome_117       126     142     Chrome_144      ~
 //	 104     118     Chrome_117  ~    127     143     Chrome_144      ~
-//	 105     119     Chrome_117  ~    128     144     Chrome_144
+//	 105     119     Chrome_120  ~    128     144     Chrome_144
 //	 106     120     Chrome_120       129     145     Chrome_144      ~
 //	 107     121     Chrome_120  ~    130     146     Chrome_146
 //	 108     122     Chrome_120  ~    131     147     Chrome_146      ~
@@ -57,10 +57,27 @@ import (
 //	 113     127     Chrome_124  ~    136     152     Chrome_152
 //	 114     128     Chrome_124  ~
 //
-// A "~" marks an Opera whose Chromium base has no profile of its own here, so
-// the closest one by version distance stands in, which is sometimes the next
-// one up rather than the one below. That is accurate whenever Chromium changed
-// nothing in its ClientHello across the gap, and an approximation when it did.
+// A "~" marks an Opera whose Chromium base has no exact profile here, so a
+// stand-in serves. The stand-in is not simply the nearest version number: it
+// is the nearest base whose feature set matches what that Chromium actually
+// sent, going by the milestones where the handshake visibly changed. ENABLE_PUSH
+// joined the HTTP/2 SETTINGS at 106 and MAX_CONCURRENT_STREAMS left them by
+// 117, GREASE ECH became default at 118, the X25519Kyber768 key share at 124,
+// X25519MLKEM768 replaced it at 131, the new ALPS codepoint arrived at 133,
+// and the ML-DSA signature algorithms at 150. Version distance only breaks
+// ties. That is why Opera 101 and 102, on Chromium 115 and 116, stay on
+// Chrome_112 although Chrome_117 is nearer: 115 and 116 still sent the five
+// entry SETTINGS block that 117 has already lost. And why Opera 133, on
+// Chromium 149, stays on Chrome_146 although Chrome_150 is nearer: 149 did not
+// advertise ML-DSA yet.
+//
+// Two stand-ins are deliberate corrections rather than nearest picks. Opera
+// 105 sits on Chromium 119, which sent GREASE ECH, so it gets Chrome_120
+// rather than the nearer Chrome_117, which predates it. Opera 115 sits on
+// Chromium 130, which offered X25519Kyber768; the version exact Chrome_130_PSK
+// in this package offers no post quantum share at all, a hole a fingerprint
+// checker notices faster than a version drift, so Chrome_124 with the correct
+// Kyber share stands in instead.
 //
 // The one real hole is Chromium 134 to 143, which nothing here covers: this
 // package jumps from Chrome_133 to Chrome_144, bogdanfinn/utls stops at
@@ -133,7 +150,7 @@ var (
 	Opera_102 = operaProfile("102", Chrome_112)
 	Opera_103 = operaProfile("103", Chrome_117)
 	Opera_104 = operaProfile("104", Chrome_117)
-	Opera_105 = operaProfile("105", Chrome_117)
+	Opera_105 = operaProfile("105", Chrome_120)
 	Opera_106 = operaProfile("106", Chrome_120)
 	Opera_107 = operaProfile("107", Chrome_120)
 	Opera_108 = operaProfile("108", Chrome_120)
@@ -143,7 +160,7 @@ var (
 	Opera_112 = operaProfile("112", Chrome_124)
 	Opera_113 = operaProfile("113", Chrome_124)
 	Opera_114 = operaProfile("114", Chrome_124)
-	Opera_115 = operaProfile("115", Chrome_130_PSK)
+	Opera_115 = operaProfile("115", Chrome_124)
 	Opera_116 = operaProfile("116", Chrome_131)
 	Opera_117 = operaProfile("117", Chrome_131)
 	Opera_118 = operaProfile("118", Chrome_133)

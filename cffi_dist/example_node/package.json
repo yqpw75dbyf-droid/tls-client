@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "ffi-napi": "^4.0.3",
+    "ffi-rs": "^1.0.58"
+  }
+}

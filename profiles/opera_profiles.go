@@ -1,9 +1,5 @@
 package profiles
 
-import (
-	tls "github.com/bogdanfinn/utls"
-)
-
 // Opera ships the Chromium it is built on unchanged as far as the handshake is
 // concerned: the same BoringSSL, the same network stack, so the same
 // ClientHello and the same HTTP/2 SETTINGS. That is not a shortcut taken here
@@ -115,23 +111,8 @@ import (
 // spec is pinned to the source ID here and handed to utls ready made, which it
 // prefers over the lookup anyway.
 func operaProfile(operaVersion string, base ClientProfile) ClientProfile {
-	source := base.clientHelloId
-
 	profile := base
-	profile.clientHelloId = tls.ClientHelloID{
-		Client:               "Opera",
-		Version:              operaVersion,
-		RandomExtensionOrder: source.RandomExtensionOrder,
-		Seed:                 source.Seed,
-		Weights:              source.Weights,
-		SpecFactory: func() (tls.ClientHelloSpec, error) {
-			if spec, err := source.ToSpec(); err == nil {
-				return spec, nil
-			}
-
-			return tls.UTLSIdToSpec(source)
-		},
-	}
+	profile.clientHelloId = derivedHelloID("Opera", operaVersion, base.clientHelloId)
 
 	return profile
 }

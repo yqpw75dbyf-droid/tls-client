@@ -40,10 +40,33 @@ import (
 // Safari ever sent. The shuffle option belongs to Chromium shaped profiles,
 // Chrome and Opera alike, where the real browser shuffles per connection.
 //
-// Versions with no profile of their own sit between captures: 16.x behaves as
-// 16.0, 17.x as 17.0, 18.1 through 18.6 as 18.0 or 18.5 whichever is nearer,
-// 26.x as 26.0. Apple changes the handshake far less often than Chromium, so
-// the point releases are much safer to approximate than the Chromium hole was.
+// The point releases below each carry the handshake of their era's capture,
+// because Apple changes the handshake per era, not per release. The eras and
+// their evidence:
+//
+//	15.3 - 16.6   the 15.6.1 capture      curl-impersonate's desktop 15.3 and
+//	                                      15.5 match it flag for flag, down to
+//	                                      Apple's own duplicated
+//	                                      rsa_pss_rsae_sha384 in the signature
+//	                                      algorithms, and utls resolves 15.6.1
+//	                                      and 16.0 from one shared spec
+//	17.0 - 17.6   the 17.0 capture        ENABLE_PUSH=0 joins the SETTINGS
+//	18.0 - 18.3   the 18.0 capture        settings 0x8 and 0x9 join, window
+//	                                      drops to 2 MB, flow to 10420225,
+//	                                      pseudo order becomes m,s,a,p; the
+//	                                      real iOS 18.3 capture in
+//	                                      lexiforest/curl_cffi issue 530 still
+//	                                      shows this exact block
+//	18.4 - 18.6   the 18.5 capture        setting 0x8 leaves, curl-impersonate's
+//	                                      desktop 18.4 shows the same block
+//	26.0 - 26.6   the 26.0 capture        X25519MLKEM768 joins the key shares;
+//	                                      curl-impersonate ships one 26 target
+//	                                      plus 26.0.1, seeing no change inside
+//	                                      the line
+//
+// Safari 27 has no profile because as of September 2026 it has no capture:
+// its release is imminent but not out. Add it from a capture when it ships,
+// not from a guess.
 
 // derivedHelloID relabels a ClientHelloID while pinning the spec to the source
 // ID. Profiles that name a utls built in carry EmptyClientHelloSpecFactory and
@@ -94,4 +117,37 @@ var (
 	Safari_18_0 = macSafariProfile("18.0", Safari_IOS_18_0)
 	Safari_18_5 = macSafariProfile("18.5", Safari_IOS_18_5)
 	Safari_26_0 = macSafariProfile("26.0", Safari_IOS_26_0)
+
+	// The 15.3 - 16.6 era, on the 15.6.1 capture.
+	Safari_15_3 = macSafariProfile("15.3", Safari_15_6_1)
+	Safari_15_5 = macSafariProfile("15.5", Safari_15_6_1)
+	Safari_16_1 = macSafariProfile("16.1", Safari_16_0)
+	Safari_16_2 = macSafariProfile("16.2", Safari_16_0)
+	Safari_16_3 = macSafariProfile("16.3", Safari_16_0)
+	Safari_16_4 = macSafariProfile("16.4", Safari_16_0)
+	Safari_16_5 = macSafariProfile("16.5", Safari_16_0)
+	Safari_16_6 = macSafariProfile("16.6", Safari_16_0)
+
+	// The 17.x era, on the 17.0 capture with its desktop 4 MB window.
+	Safari_17_1 = macSafariProfile("17.1", Safari_17_0)
+	Safari_17_2 = macSafariProfile("17.2", Safari_17_0)
+	Safari_17_3 = macSafariProfile("17.3", Safari_17_0)
+	Safari_17_4 = macSafariProfile("17.4", Safari_17_0)
+	Safari_17_5 = macSafariProfile("17.5", Safari_17_0)
+	Safari_17_6 = macSafariProfile("17.6", Safari_17_0)
+
+	// 18.0 - 18.3 on the 18.0 capture, 18.4 and 18.6 on the 18.5 one.
+	Safari_18_1 = macSafariProfile("18.1", Safari_18_0)
+	Safari_18_2 = macSafariProfile("18.2", Safari_18_0)
+	Safari_18_3 = macSafariProfile("18.3", Safari_18_0)
+	Safari_18_4 = macSafariProfile("18.4", Safari_18_5)
+	Safari_18_6 = macSafariProfile("18.6", Safari_18_5)
+
+	// The 26.x era, on the 26.0 capture.
+	Safari_26_1 = macSafariProfile("26.1", Safari_26_0)
+	Safari_26_2 = macSafariProfile("26.2", Safari_26_0)
+	Safari_26_3 = macSafariProfile("26.3", Safari_26_0)
+	Safari_26_4 = macSafariProfile("26.4", Safari_26_0)
+	Safari_26_5 = macSafariProfile("26.5", Safari_26_0)
+	Safari_26_6 = macSafariProfile("26.6", Safari_26_0)
 )

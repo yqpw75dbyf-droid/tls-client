@@ -48,6 +48,75 @@ func TestMacSafariProfilesMatchTheirIOSBase(t *testing.T) {
 	}
 }
 
+// TestMacSafariEraAliases checks that every point release resolves to exactly
+// its era's handshake: same cipher suites, same extension sequence, same
+// HTTP/2 settings values, and a version string of its own.
+func TestMacSafariEraAliases(t *testing.T) {
+	eras := []struct {
+		base    ClientProfile
+		aliases map[string]ClientProfile
+	}{
+		{Safari_15_6_1, map[string]ClientProfile{
+			"15.3": Safari_15_3, "15.5": Safari_15_5,
+		}},
+		{Safari_16_0, map[string]ClientProfile{
+			"16.1": Safari_16_1, "16.2": Safari_16_2, "16.3": Safari_16_3,
+			"16.4": Safari_16_4, "16.5": Safari_16_5, "16.6": Safari_16_6,
+		}},
+		{Safari_17_0, map[string]ClientProfile{
+			"17.1": Safari_17_1, "17.2": Safari_17_2, "17.3": Safari_17_3,
+			"17.4": Safari_17_4, "17.5": Safari_17_5, "17.6": Safari_17_6,
+		}},
+		{Safari_18_0, map[string]ClientProfile{
+			"18.1": Safari_18_1, "18.2": Safari_18_2, "18.3": Safari_18_3,
+		}},
+		{Safari_18_5, map[string]ClientProfile{
+			"18.4": Safari_18_4, "18.6": Safari_18_6,
+		}},
+		{Safari_26_0, map[string]ClientProfile{
+			"26.1": Safari_26_1, "26.2": Safari_26_2, "26.3": Safari_26_3,
+			"26.4": Safari_26_4, "26.5": Safari_26_5, "26.6": Safari_26_6,
+		}},
+	}
+
+	for _, era := range eras {
+		baseSpec, err := resolveSpec(era.base.clientHelloId)
+		if err != nil {
+			t.Fatalf("no spec for era base %s: %v", era.base.clientHelloId.Str(), err)
+		}
+
+		for version, alias := range era.aliases {
+			aliasSpec, err := alias.clientHelloId.ToSpec()
+			if err != nil {
+				t.Errorf("safari %s: spec factory failed: %v", version, err)
+				continue
+			}
+
+			if alias.clientHelloId.Version != version {
+				t.Errorf("safari %s: version string is %q", version, alias.clientHelloId.Version)
+			}
+
+			if !slices.Equal(aliasSpec.CipherSuites, baseSpec.CipherSuites) {
+				t.Errorf("safari %s: cipher suites differ from era base", version)
+			}
+
+			if !slices.Equal(extensionTypes(aliasSpec), extensionTypes(baseSpec)) {
+				t.Errorf("safari %s: extensions differ from era base", version)
+			}
+
+			for id, want := range era.base.settings {
+				if got := alias.settings[id]; got != want {
+					t.Errorf("safari %s: setting %v = %d, era base sends %d", version, id, got, want)
+				}
+			}
+
+			if alias.connectionFlow != era.base.connectionFlow {
+				t.Errorf("safari %s: connection flow %d, era base %d", version, alias.connectionFlow, era.base.connectionFlow)
+			}
+		}
+	}
+}
+
 // TestMacSafariHTTP2Blocks pins the desktop HTTP/2 fingerprints to what
 // lexiforest/curl-impersonate's desktop captures show: Safari 17 keeps the
 // 4 MB window that iOS never had, Safari 18 on shares the iOS block entirely.

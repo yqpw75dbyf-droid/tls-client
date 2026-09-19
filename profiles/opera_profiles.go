@@ -41,11 +41,11 @@ import (
 //	  97     111     Chrome_111       120     135     Chrome_133      ~
 //	  98     112     Chrome_112       121     137     Chrome_133      ~
 //	  99     113     Chrome_112  ~    122     138     Chrome_133      ~
-//	 100     114     Chrome_112  ~    123     139     Chrome_133      ~
-//	 101     115     Chrome_112  ~    124     140     Chrome_133      ~
-//	 102     116     Chrome_112  ~    125     141     Chrome_133      ~
-//	 103     117     Chrome_117       126     142     Chrome_133      ~
-//	 104     118     Chrome_117  ~    127     143     Chrome_133      ~
+//	 100     114     Chrome_112  ~    123     139     Chrome_144      ~
+//	 101     115     Chrome_112  ~    124     140     Chrome_144      ~
+//	 102     116     Chrome_112  ~    125     141     Chrome_144      ~
+//	 103     117     Chrome_117       126     142     Chrome_144      ~
+//	 104     118     Chrome_117  ~    127     143     Chrome_144      ~
 //	 105     119     Chrome_117  ~    128     144     Chrome_144
 //	 106     120     Chrome_120       129     145     Chrome_144      ~
 //	 107     121     Chrome_120  ~    130     146     Chrome_146
@@ -58,13 +58,30 @@ import (
 //	 114     128     Chrome_124  ~
 //
 // A "~" marks an Opera whose Chromium base has no profile of its own here, so
-// the nearest lower one stands in. That is accurate whenever Chromium changed
+// the closest one by version distance stands in, which is sometimes the next
+// one up rather than the one below. That is accurate whenever Chromium changed
 // nothing in its ClientHello across the gap, and an approximation when it did.
-// The widest gap is Opera 121 to 127, which sit on Chromium 137 to 143 with
-// Chrome_133 underneath, because this package has no Chrome profile between
-// 133 and 144. Capture and add the missing Chrome versions to close it: there
-// is nothing Opera specific to capture, a Chrome profile for those Chromium
-// releases fixes Opera for free.
+//
+// The one real hole is Chromium 134 to 143, which nothing here covers: this
+// package jumps from Chrome_133 to Chrome_144, bogdanfinn/utls stops at
+// HelloChrome_133 and so does refraction-networking/utls upstream. Opera 119
+// to 127 sit in that hole and lean on whichever of Chrome_133 or Chrome_144 is
+// nearer.
+//
+// Chromium did change its ClientHello inside that window, so those nine are
+// approximations rather than matches. Measured JA4 for real Chrome, by
+// extension count:
+//
+//	Chrome 134  t13d1513h2_8daaf6152771_6de1616fdcc3  13 extensions
+//	Chrome 144  t13d1517h2_8daaf6152771_b6f405a00624  17 extensions
+//	Chrome 149  t13d1516h2_8daaf6152771_d8a2da3f94cd  16 extensions
+//
+// Closing it needs captures, not cleverness: run a real Chromium 134 to 143 at
+// a fingerprint endpoint and write the Chrome profiles from what it sends.
+// Nothing Opera specific needs capturing, a Chrome profile for those releases
+// fixes Opera for free. Guessing the spec instead would be worse than the gap,
+// because a profile that claims a version it does not match is harder to catch
+// than one that is openly approximate.
 //
 // Only the plain variants are defined. Say so if the PSK variants are wanted
 // too; they would pair with the Chrome_*_PSK profiles the same way.
@@ -134,11 +151,11 @@ var (
 	Opera_120 = operaProfile("120", Chrome_133)
 	Opera_121 = operaProfile("121", Chrome_133)
 	Opera_122 = operaProfile("122", Chrome_133)
-	Opera_123 = operaProfile("123", Chrome_133)
-	Opera_124 = operaProfile("124", Chrome_133)
-	Opera_125 = operaProfile("125", Chrome_133)
-	Opera_126 = operaProfile("126", Chrome_133)
-	Opera_127 = operaProfile("127", Chrome_133)
+	Opera_123 = operaProfile("123", Chrome_144)
+	Opera_124 = operaProfile("124", Chrome_144)
+	Opera_125 = operaProfile("125", Chrome_144)
+	Opera_126 = operaProfile("126", Chrome_144)
+	Opera_127 = operaProfile("127", Chrome_144)
 	Opera_128 = operaProfile("128", Chrome_144)
 	Opera_129 = operaProfile("129", Chrome_144)
 	Opera_130 = operaProfile("130", Chrome_146)

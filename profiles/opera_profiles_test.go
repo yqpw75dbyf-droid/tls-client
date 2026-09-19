@@ -73,6 +73,11 @@ func TestOperaProfilesMatchTheirChromiumBase(t *testing.T) {
 		{"opera_103 on chrome_117", Opera_103, Chrome_117},
 		{"opera_110 on chrome_124", Opera_110, Chrome_124},
 		{"opera_115 on chrome_130_psk", Opera_115, Chrome_130_PSK},
+		// Opera 121 and 127 straddle the Chromium 134 to 143 hole: 121 is on
+		// Chromium 137 and leans down to Chrome_133, 127 is on Chromium 143 and
+		// leans up to Chrome_144. They must not share a base.
+		{"opera_121 on chrome_133", Opera_121, Chrome_133},
+		{"opera_127 on chrome_144", Opera_127, Chrome_144},
 		{"opera_128 on chrome_144", Opera_128, Chrome_144},
 		{"opera_136 on chrome_152", Opera_136, Chrome_152},
 	}

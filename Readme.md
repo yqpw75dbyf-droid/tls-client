@@ -1,71 +1,60 @@
 # TLS-Client
 
-### Preface
+A Go HTTP client that sends requests with a **real browser's TLS and HTTP/2
+fingerprint**. Changing the `User-Agent` is not enough — servers fingerprint
+the TLS ClientHello (cipher and extension order, key shares → JA3/JA4) and the
+HTTP/2 preamble (SETTINGS, window update, header priority, pseudo-header order
+→ the Akamai fingerprint). This client reproduces both from captured browser
+data, so at the handshake layer it is indistinguishable from the browser it
+impersonates.
 
-This TLS Client is built upon https://github.com/Carcraftz/fhttp and https://github.com/Carcraftz/utls (https://github.com/refraction-networking/utls). Big thanks to
-all contributors so far. Sadly it seems that the original repositories from Carcraftz are not maintained anymore.
+This is a fork of [`bogdanfinn/tls-client`](https://github.com/bogdanfinn/tls-client),
+published as `github.com/yqpw75dbyf-droid/tls-client`. It builds on
+[fhttp](https://github.com/bogdanfinn/fhttp) and
+[utls](https://github.com/bogdanfinn/utls).
 
-### What is TLS Fingerprinting?
+For the full design and request flow, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-Some people think it is enough to change the user-agent header of a request to let the server think that the client
-requesting a resource is a specific browser.
-Nowadays this is not enough, because the server might use a technique to detect the client browser which is called TLS
-Fingerprinting.
+## What this fork adds
 
-Even though this article is about TLS Fingerprinting in NodeJS it well describes the technique in general.
-https://httptoolkit.tech/blog/tls-fingerprinting-node-js/#how-does-tls-fingerprinting-work
+- **Opera 92–136** — the full modern line, mapped to the right Chromium base
+  (the offset drifts +14 → +15 → +16 where Opera skipped Chromium 129 and 136).
+- **Safari macOS 15.3–26.6** — every point release, grouped by the handshake
+  era it belongs to, with the desktop HTTP/2 differences from iOS.
+- **Tor Browser 14.0, 14.5, 15.0** — 15.0 captured from a real install over a
+  live Tor circuit.
+- **Chrome 153 and Edge 153** — captured from the real browsers; Edge is
+  Chrome 152 without the `trust_anchors` extension.
+- **Firefox repairs** — the profiles now carry the resumption extensions and
+  the real HTTP/2 header-frame priority, instead of accidentally wearing Tor's
+  shape and Chrome's H2 priority.
+- **A Python package** — `import tls_client; tls_client.get(url, preset=...)`,
+  see [python/](./python/).
+- Fingerprint fixes verified on the wire, and per-profile tests that fail if a
+  profile drifts from the browser it names.
 
-### Why is this library needed?
+## Features
 
-With this library you are able to create a http client implementing an interface which is similar to golangs net/http
-client interface.
-This TLS Client allows you to specify the Client (Browser and Version) you want to use, when requesting a server.
+- HTTP/1.1, HTTP/2, HTTP/3 with automatic protocol selection
+- Protocol racing (Chrome-style happy eyeballs for HTTP/2 vs HTTP/3)
+- TLS fingerprinting for Chrome, Firefox, Safari, Edge, Opera, Brave, Tor, and
+  mobile app clients
+- Custom fingerprints from a JA3 string plus HTTP/2 and HTTP/3 parameters
+- WebSocket over the same fingerprinted TLS dialer
+- Custom header ordering
+- HTTP and SOCKS4/SOCKS5 proxies (SOCKS5 UDP for HTTP/3)
+- Cookie jar management
+- Certificate pinning
+- Bandwidth tracking
+- Language bindings via a C shared library: Python, Node.js, C#
 
-### Features
+## Install (Go)
 
-- ✅ **HTTP/1.1, HTTP/2, HTTP/3** - Full protocol support with automatic negotiation
-- ✅ **Protocol Racing** - Chrome-like "Happy Eyeballs" for HTTP/2 vs HTTP/3
-- ✅ **TLS Fingerprinting** - Mimic Chrome, Firefox, Safari, and other browsers
-- ✅ **HTTP/3 Fingerprinting** - Accurate QUIC/HTTP/3 fingerprints matching real browsers
-- ✅ **WebSocket Support** - Maintain TLS fingerprinting over WebSocket connections
-- ✅ **Custom Header Ordering** - Control the order of HTTP headers
-- ✅ **Proxy Support** - HTTP and SOCKS5 proxies
-- ✅ **Cookie Jar Management** - Built-in cookie handling
-- ✅ **Certificate Pinning** - Enhanced security with custom certificate validation
-- ✅ **Bandwidth Tracking** - Monitor upload/download bandwidth
-- ✅ **Language Bindings** - Use from JavaScript (Node.js), Python, and C# via FFI
-
-### Interface
-
-The HTTP Client interface extends the base net/http Client with additional functionality:
-
-```go
-type HttpClient interface {
-    GetCookies(u *url.URL) []*http.Cookie
-    SetCookies(u *url.URL, cookies []*http.Cookie)
-    SetCookieJar(jar http.CookieJar)
-    GetCookieJar() http.CookieJar
-    SetProxy(proxyUrl string) error
-    GetProxy() string
-    SetFollowRedirect(followRedirect bool)
-    GetFollowRedirect() bool
-    CloseIdleConnections()
-    Do(req *http.Request) (*http.Response, error)
-    Get(url string) (resp *http.Response, err error)
-    Head(url string) (resp *http.Response, err error)
-    Post(url, contentType string, body io.Reader) (resp *http.Response, err error)
-
-    GetBandwidthTracker() bandwidth.BandwidthTracker
-    GetDialer() proxy.ContextDialer
-    GetTLSDialer() TLSDialerFunc
-}
+```bash
+go get github.com/yqpw75dbyf-droid/tls-client@latest
 ```
 
-### Detailed Documentation
-
-https://bogdanfinn.gitbook.io/open-source-oasis/
-
-### Quick Usage Example
+## Quick start (Go)
 
 ```go
 package main
@@ -84,86 +73,96 @@ func main() {
 	jar := tls_client.NewCookieJar()
 	options := []tls_client.HttpClientOption{
 		tls_client.WithTimeoutSeconds(30),
-		tls_client.WithClientProfile(profiles.Chrome_150),
-		tls_client.WithNotFollowRedirects(),
-		tls_client.WithCookieJar(jar), // create cookieJar instance and pass it as argument
+		tls_client.WithClientProfile(profiles.Chrome_153),
+		tls_client.WithRandomTLSExtensionOrder(), // Chromium shuffles per connection
+		tls_client.WithCookieJar(jar),
 	}
 
 	client, err := tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
 
 	req, err := http.NewRequest(http.MethodGet, "https://tls.peet.ws/api/all", nil)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
-
 	req.Header = http.Header{
-		"accept":                    {"*/*"},
-		"accept-language":           {"de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7"},
-		"user-agent":                {"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"},
-		http.HeaderOrderKey: {
-			"accept",
-			"accept-language",
-			"user-agent",
-		},
+		"accept":          {"*/*"},
+		"accept-language": {"en-US,en;q=0.9"},
+		"user-agent":      {"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"},
+		http.HeaderOrderKey: {"accept", "accept-language", "user-agent"},
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
-
 	defer resp.Body.Close()
 
-	log.Println(fmt.Sprintf("status code: %d", resp.StatusCode))
-
-	readBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	log.Println(string(readBytes))
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Println(resp.StatusCode)
+	fmt.Println(string(body))
 }
 ```
 
-### Questions?
+## Quick start (Python)
 
-Join my discord support server for free: https://discord.gg/7Ej9eJvHqk
-No Support in DMs!
+```python
+import tls_client
 
+r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_153")
+print(r.status_code, r.protocol)
 
-### Appreciate my work?
+with tls_client.Session(preset="firefox_135") as s:
+    s.get("https://example.com")
+```
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/CaptainBarnius)
+The Python package drives a compiled C shared library that is not bundled;
+[python/README.md](./python/README.md) covers building it and the full API.
 
-Or, if you prefer crypto:
+## Profiles
 
-- **ETH** `0x1Ef18abfE61372e49F08eD24B1055cbDD5d7e0Fc`
-- **BTC** `bc1qkfqu5xvayqh55gwjtyannvyqzr4cax4eu3k2u6`
-- **ADA** `addr1qxj5hg5xfq9l5r5ed7av7mzg0gy5xemn64lkna5cuu9e4yt0vk8st6zvmfuqjdz849drd7zgcdky4zrdvm603dzf4dgs5unend`
-- **SOL** `7hYfiX4R5bEbggYY2JRZi2a3EdcEzQ6XbgZiHRiRHjau`
+`profiles.MappedTLSClients` (Go) and `tls_client.CLIENT_IDENTIFIERS` (Python)
+list every identifier: Chrome 103–153, Edge 153, Firefox 102–148, Safari macOS
+15.3–26.6 and iOS, Opera 89–136, Tor Browser 14.x/15, Brave, and app profiles
+(Nike, Zalando, MMS, Mesh, okhttp, and others).
 
----
+### Getting a profile right
 
-## 🛡️ Need Antibot Bypass?
+The handshake is only half of looking like a browser. Match the rest too:
 
-<a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=tls-client" target="_blank"><img src="https://raw.githubusercontent.com/yqpw75dbyf-droid/tls-client/master/.github/assets/hypersolutions.jpg" height="47" width="149"></a>
+- **Chromium (Chrome, Opera, Edge):** enable `WithRandomTLSExtensionOrder()` —
+  real Chrome shuffles its extension order every connection.
+- **Safari and Tor:** do **not** shuffle; those engines never do.
+- **Tor:** route through the Tor daemon (`socks5://127.0.0.1:9150` for Tor
+  Browser, `9050` for a standalone `tor`) and disable HTTP/3. A Tor
+  fingerprint from a non-Tor IP is worse than not impersonating Tor.
+- **Every profile:** send headers that tell the same story — the right
+  `User-Agent`, the matching `sec-ch-ua` (or none, for Firefox/Safari/Tor,
+  which have no client hints), and the browser's real header order.
 
-TLS fingerprinting alone isn't enough for modern bot protection. **[Hyper Solutions](https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=tls-client)** provides the missing piece - API endpoints that generate valid antibot tokens for:
+## Language bindings
 
-**Akamai** • **DataDome** • **Kasada** • **Incapsula**
+The Go core compiles to a C shared library (`cffi_dist/`) that exposes
+`request`, `getCookiesFromSession`, `addCookiesToSession`, `destroySession`,
+`destroyAll`, and `freeMemory` over JSON. Examples for Python, Node.js, C#, and
+TypeScript are in `cffi_dist/`.
 
-No browser automation. Just simple API calls that return the exact cookies and headers these systems require.
+```bash
+cd cffi_dist
+CGO_ENABLED=1 go build -buildmode=c-shared -o dist/tls-client.so .   # .dll / .dylib per OS
+```
 
-🚀 **[Get Your API Key](https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=tls-client)** | 📖 **[Docs](https://docs.justhyped.dev)** | 💬 **[Discord](https://discord.gg/akamai)**
+## Testing
 
----
+```bash
+go test ./...                 # library + profile tests
+# tests/ integration suite needs a SOCKS_5_PROXY env var for the proxy tests
+```
 
-### Powered by
-[![JetBrains logo.](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSource)
+## Credits and license
+
+Fork of `bogdanfinn/tls-client`, itself built on the work of Carcraftz and the
+[refraction-networking/utls](https://github.com/refraction-networking/utls)
+project. MIT licensed; see [LICENSE](./LICENSE).

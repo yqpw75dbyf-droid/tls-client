@@ -91,6 +91,69 @@ func TestTorSpecMatchesTheCapture(t *testing.T) {
 	}
 }
 
+// TestTor15SpecMatchesTheCapture pins Tor_15_0 to the real Tor Browser 15.0.20
+// (Firefox 140 ESR) capture taken over a live Tor circuit on 2026-09-20.
+func TestTor15SpecMatchesTheCapture(t *testing.T) {
+	spec, err := Tor_15_0.clientHelloId.ToSpec()
+	if err != nil {
+		t.Fatalf("no spec: %v", err)
+	}
+
+	wantCiphers := []uint16{
+		4865, 4867, 4866, 49195, 49199, 52393, 52392, 49196, 49200,
+		49162, 49161, 49171, 49172, 156, 157, 47, 53,
+	}
+	if !slices.Equal(spec.CipherSuites, wantCiphers) {
+		t.Errorf("cipher suites = %v, capture says %v", spec.CipherSuites, wantCiphers)
+	}
+
+	if len(spec.Extensions) != 15 {
+		t.Errorf("%d extensions, the capture has exactly 15", len(spec.Extensions))
+	}
+
+	var sct, certComp, greaseECH bool
+
+	for _, extension := range spec.Extensions {
+		switch v := extension.(type) {
+		case *tls.SessionTicketExtension:
+			t.Error("carries session_ticket: Tor 15 still strips it")
+		case *tls.PSKKeyExchangeModesExtension:
+			t.Error("carries psk_key_exchange_modes: Tor 15 still strips it")
+		case *tls.SCTExtension:
+			sct = true
+		case *tls.UtlsCompressCertExtension:
+			certComp = len(v.Algorithms) == 3
+		case *tls.GREASEEncryptedClientHelloExtension:
+			greaseECH = true
+		case *tls.KeyShareExtension:
+			var groups []tls.CurveID
+			for _, share := range v.KeyShares {
+				groups = append(groups, share.Group)
+			}
+			if !slices.Equal(groups, []tls.CurveID{tls.X25519MLKEM768, tls.X25519, tls.CurveP256}) {
+				t.Errorf("key shares = %v, capture says X25519MLKEM768, X25519, P-256", groups)
+			}
+		}
+	}
+
+	if !sct || !certComp || !greaseECH {
+		t.Errorf("sct=%v certComp(3 algos)=%v greaseECH=%v: the 140 ESR base sends all three", sct, certComp, greaseECH)
+	}
+
+	if Tor_15_0.streamID != 3 {
+		t.Errorf("first stream = %d, the capture opens on 3", Tor_15_0.streamID)
+	}
+
+	hp := Tor_15_0.headerPriority
+	if hp == nil || hp.Exclusive || hp.StreamDep != 0 || hp.Weight != 41 {
+		t.Errorf("headerPriority = %+v, want weight 41 (42 on the wire), not exclusive, dep 0", hp)
+	}
+
+	if Tor_15_0.connectionFlow != 12517377 {
+		t.Errorf("connection flow = %d, want 12517377", Tor_15_0.connectionFlow)
+	}
+}
+
 // TestTor14AliasMatches keeps 14.0 on the same handshake as 14.5.
 func TestTor14AliasMatches(t *testing.T) {
 	aliasSpec, err := Tor_14_0.clientHelloId.ToSpec()

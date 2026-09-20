@@ -63,10 +63,9 @@ import (
 //   - Do not combine with WithRandomTLSExtensionOrder: NSS never randomizes
 //     extension order.
 //
-// Tor Browser 13.x (Firefox 115 ESR) and 15.x (Firefox 140 ESR, current since
-// October 2025) have no profile because no capture of them is published;
-// curl-impersonate ships only the 14.5 one. Add them from captures when they
-// exist, not from a guess.
+// Tor Browser 15.x, the current line, is Tor_15_0 below, captured from a
+// real install. Tor Browser 13.x (Firefox 115 ESR) has no profile because no
+// capture of it exists.
 var Tor_14_5 = ClientProfile{
 	clientHelloId: tls.ClientHelloID{
 		Client:               "Tor",
@@ -211,3 +210,171 @@ var Tor_14_0 = func() ClientProfile {
 
 	return profile
 }()
+
+// Tor_15_0 is Tor Browser 15, the current line, on Firefox 140 ESR. Captured
+// from a real Tor Browser 15.0.20 (Firefox 140.14.0) on Windows, driven
+// headless through Marionette over a live Tor circuit against
+// tls.peet.ws/api/all on 2026-09-20:
+//
+//   - JA4 t13d1715h2_5b57614c22b0_a54fffd0eb61
+//   - 17 cipher suites: Firefox's full list, the two ECDHE_ECDSA CBC suites
+//     that 14.5 lacked are back
+//   - 15 extensions in this order: server_name, extended_master_secret,
+//     renegotiation_info, supported_groups, ec_point_formats, ALPN,
+//     status_request, delegated_credentials, SCT, key_share,
+//     supported_versions, signature_algorithms, record_size_limit,
+//     compress_certificate (zlib, brotli, zstd), ECH GREASE (281 bytes)
+//   - supported_groups opens with X25519MLKEM768 and the key share carries
+//     it: the 140 ESR base is past the ML-KEM rollout
+//   - still no session_ticket and no psk_key_exchange_modes: the Tor tell
+//     survives the ESR bump
+//   - HTTP/2 1:65536;2:0;4:131072;5:16384|12517377|0|m,p,a,s, no PRIORITY
+//     frames, and the first request on stream 3 with weight 42 not
+//     exclusive; Firefox never uses stream 1, and with the priority tree
+//     gone nothing reserves 3 through 13 any more
+//   - request headers, in order: user-agent "Mozilla/5.0 (Windows NT 10.0;
+//     Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0", accept,
+//     accept-language "en-US,en;q=0.5", accept-encoding "gzip, deflate,
+//     br, zstd", sec-gpc "1", upgrade-insecure-requests, sec-fetch-dest,
+//     sec-fetch-mode, sec-fetch-site, sec-fetch-user, priority "u=0, i",
+//     te "trailers"
+//
+// Against Firefox_135 in this package the spec is the same extension list
+// with session_ticket and psk_key_exchange_modes removed, which is how the
+// 14.5 profile relates to Firefox 128 too. It is written out rather than
+// derived so that the capture, not another profile, is its source.
+var Tor_15_0 = ClientProfile{
+	clientHelloId: tls.ClientHelloID{
+		Client:               "Tor",
+		RandomExtensionOrder: false,
+		Version:              "15.0",
+		Seed:                 nil,
+		SpecFactory: func() (tls.ClientHelloSpec, error) {
+			return tls.ClientHelloSpec{
+				CipherSuites: []uint16{
+					tls.TLS_AES_128_GCM_SHA256,
+					tls.TLS_CHACHA20_POLY1305_SHA256,
+					tls.TLS_AES_256_GCM_SHA384,
+					tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+					tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+					tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+					tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+					tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+					tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+					tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+					tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+					tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+					tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+					tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+					tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+					tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+					tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+				},
+				CompressionMethods: []byte{
+					tls.CompressionNone,
+				},
+				Extensions: []tls.TLSExtension{
+					&tls.SNIExtension{},
+					&tls.ExtendedMasterSecretExtension{},
+					&tls.RenegotiationInfoExtension{
+						Renegotiation: tls.RenegotiateOnceAsClient,
+					},
+					&tls.SupportedCurvesExtension{Curves: []tls.CurveID{
+						tls.X25519MLKEM768,
+						tls.X25519,
+						tls.CurveP256,
+						tls.CurveP384,
+						tls.CurveP521,
+						tls.FAKEFFDHE2048,
+						tls.FAKEFFDHE3072,
+					}},
+					&tls.SupportedPointsExtension{SupportedPoints: []byte{
+						tls.PointFormatUncompressed,
+					}},
+					&tls.ALPNExtension{AlpnProtocols: []string{
+						"h2",
+						"http/1.1",
+					}},
+					&tls.StatusRequestExtension{},
+					&tls.DelegatedCredentialsExtension{SupportedSignatureAlgorithms: []tls.SignatureScheme{
+						tls.ECDSAWithP256AndSHA256,
+						tls.ECDSAWithP384AndSHA384,
+						tls.ECDSAWithP521AndSHA512,
+						tls.ECDSAWithSHA1,
+					}},
+					&tls.SCTExtension{},
+					&tls.KeyShareExtension{KeyShares: []tls.KeyShare{
+						{Group: tls.X25519MLKEM768},
+						{Group: tls.X25519},
+						{Group: tls.CurveP256},
+					}},
+					&tls.SupportedVersionsExtension{Versions: []uint16{
+						tls.VersionTLS13,
+						tls.VersionTLS12,
+					}},
+					&tls.SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []tls.SignatureScheme{
+						tls.ECDSAWithP256AndSHA256,
+						tls.ECDSAWithP384AndSHA384,
+						tls.ECDSAWithP521AndSHA512,
+						tls.PSSWithSHA256,
+						tls.PSSWithSHA384,
+						tls.PSSWithSHA512,
+						tls.PKCS1WithSHA256,
+						tls.PKCS1WithSHA384,
+						tls.PKCS1WithSHA512,
+						tls.ECDSAWithSHA1,
+						tls.PKCS1WithSHA1,
+					}},
+					&tls.FakeRecordSizeLimitExtension{Limit: 0x4001},
+					&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
+						tls.CertCompressionZlib,
+						tls.CertCompressionBrotli,
+						tls.CertCompressionZstd,
+					}},
+					&tls.GREASEEncryptedClientHelloExtension{
+						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
+							{
+								KdfId:  dicttls.HKDF_SHA256,
+								AeadId: dicttls.AEAD_AES_128_GCM,
+							},
+							{
+								KdfId:  dicttls.HKDF_SHA256,
+								AeadId: dicttls.AEAD_AES_256_GCM,
+							},
+							{
+								KdfId:  dicttls.HKDF_SHA256,
+								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
+							},
+						},
+						CandidatePayloadLens: []uint16{128, 223}, // +16: 144, 239
+					},
+				},
+			}, nil
+		},
+	},
+	settings: map[http2.SettingID]uint32{
+		http2.SettingHeaderTableSize:   65536,
+		http2.SettingEnablePush:        0,
+		http2.SettingInitialWindowSize: 131072,
+		http2.SettingMaxFrameSize:      16384,
+	},
+	settingsOrder: []http2.SettingID{
+		http2.SettingHeaderTableSize,
+		http2.SettingEnablePush,
+		http2.SettingInitialWindowSize,
+		http2.SettingMaxFrameSize,
+	},
+	pseudoHeaderOrder: []string{
+		":method",
+		":path",
+		":authority",
+		":scheme",
+	},
+	connectionFlow: 12517377,
+	streamID:       3,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    41, // weight 42 on the wire, the byte is weight minus one
+	},
+}

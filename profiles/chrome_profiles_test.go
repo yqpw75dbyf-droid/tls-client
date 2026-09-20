@@ -2,7 +2,10 @@ package profiles
 
 import (
 	"slices"
+	"strings"
 	"testing"
+
+	tls "github.com/bogdanfinn/utls"
 )
 
 // chrome153TrustAnchorsCapture is the trust_anchors payload branded Chrome
@@ -44,6 +47,30 @@ func TestChrome153IsChrome152OnTheWire(t *testing.T) {
 				t.Error("HTTP/2 half differs from the 152 base")
 			}
 		})
+	}
+}
+
+// TestNoServerPaddingOnStableChromium guards against re-enabling the
+// server_padding extension (0x12e0) on the strength of bogdanfinn/tls-client
+// issue 281, which measured a Chrome for Testing build. Branded stable Chrome
+// 153 and Edge 153 do not send it. Remove this test when a branded stable
+// capture shows it.
+func TestNoServerPaddingOnStableChromium(t *testing.T) {
+	for name, profile := range MappedTLSClients {
+		if !strings.HasPrefix(name, "chrome_") && !strings.HasPrefix(name, "edge_") && !strings.HasPrefix(name, "opera_") {
+			continue
+		}
+
+		spec, err := resolveSpec(profile.clientHelloId)
+		if err != nil {
+			continue
+		}
+
+		for _, extension := range spec.Extensions {
+			if generic, ok := extension.(*tls.GenericExtension); ok && generic.Id == 0x12e0 {
+				t.Errorf("%s sends server_padding (0x12e0): stable Chromium does not", name)
+			}
+		}
 	}
 }
 

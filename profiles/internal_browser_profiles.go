@@ -96,6 +96,10 @@ var Chrome_152_PSK = ClientProfile{
 					}},
 					// server_padding (0x12e0, BoringSSL-internal, payload 4000) is
 					// Beta-only. Stable omits it. Uncomment to match Beta.
+					// bogdanfinn/tls-client issue 281 reports it from a Chrome
+					// for Testing 152 build; branded stable Chrome 153.0.8010.48
+					// and Edge 153.0.4234.48, captured on 2026-09-20, do not
+					// send it, so stable stays without it.
 					// &tls.GenericExtension{Id: 0x12e0, Data: []byte{0x0f, 0xa0}},
 					&tls.GenericExtension{Id: 0xca34, Data: chrome152TrustAnchors}, // https://source.chromium.org/search?q=TLSEXT_TYPE_trust_anchors https://issues.chromium.org/issues/398275713
 					&tls.UtlsGREASEExtension{},
@@ -216,6 +220,10 @@ var Chrome_152 = ClientProfile{
 					}},
 					// server_padding (0x12e0, BoringSSL-internal, payload 4000) is
 					// Beta-only. Stable omits it. Uncomment to match Beta.
+					// bogdanfinn/tls-client issue 281 reports it from a Chrome
+					// for Testing 152 build; branded stable Chrome 153.0.8010.48
+					// and Edge 153.0.4234.48, captured on 2026-09-20, do not
+					// send it, so stable stays without it.
 					// &tls.GenericExtension{Id: 0x12e0, Data: []byte{0x0f, 0xa0}},
 					&tls.GenericExtension{Id: 0xca34, Data: chrome152TrustAnchors}, // https://source.chromium.org/search?q=TLSEXT_TYPE_trust_anchors https://issues.chromium.org/issues/398275713
 					&tls.UtlsGREASEExtension{},

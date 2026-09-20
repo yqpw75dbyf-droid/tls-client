@@ -169,6 +169,7 @@ var Firefox_148 = ClientProfile{
 	},
 	http3PriorityParam:    0,
 	http3SendGreaseFrames: true,
+	streamID: 15,
 }
 
 var Firefox_147 = ClientProfile{
@@ -333,6 +334,7 @@ var Firefox_147 = ClientProfile{
 	},
 	http3PriorityParam:    0,
 	http3SendGreaseFrames: true,
+	streamID: 15,
 }
 
 var Firefox_147_PSK = ClientProfile{
@@ -492,6 +494,7 @@ var Firefox_147_PSK = ClientProfile{
 	},
 	http3PriorityParam:    0,
 	http3SendGreaseFrames: true,
+	streamID: 15,
 }
 
 var Firefox_146_PSK = ClientProfile{
@@ -631,6 +634,7 @@ var Firefox_146_PSK = ClientProfile{
 		Exclusive: false,
 		Weight:    41,
 	},
+	streamID: 15,
 }
 
 var Firefox_135 = ClientProfile{
@@ -681,6 +685,7 @@ var Firefox_135 = ClientProfile{
 					&tls.SupportedPointsExtension{SupportedPoints: []byte{
 						tls.PointFormatUncompressed,
 					}},
+					&tls.SessionTicketExtension{},
 					&tls.ALPNExtension{AlpnProtocols: []string{
 						"h2",
 						"http/1.1",
@@ -714,6 +719,9 @@ var Firefox_135 = ClientProfile{
 						tls.PKCS1WithSHA512,
 						tls.ECDSAWithSHA1,
 						tls.PKCS1WithSHA1,
+					}},
+					&tls.PSKKeyExchangeModesExtension{Modes: []uint8{
+						tls.PskModeDHE,
 					}},
 					&tls.FakeRecordSizeLimitExtension{Limit: 0x4001},
 					&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
@@ -761,6 +769,12 @@ var Firefox_135 = ClientProfile{
 		":scheme",
 	},
 	connectionFlow: 12517377,
+	streamID: 15,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    41, // weight 42 on the wire, the byte is weight minus one
+	},
 }
 
 var Firefox_133 = ClientProfile{
@@ -811,6 +825,7 @@ var Firefox_133 = ClientProfile{
 					&tls.SupportedPointsExtension{SupportedPoints: []byte{
 						tls.PointFormatUncompressed,
 					}},
+					&tls.SessionTicketExtension{},
 					&tls.ALPNExtension{AlpnProtocols: []string{
 						"h2",
 						"http/1.1",
@@ -843,6 +858,9 @@ var Firefox_133 = ClientProfile{
 						tls.PKCS1WithSHA512,
 						tls.ECDSAWithSHA1,
 						tls.PKCS1WithSHA1,
+					}},
+					&tls.PSKKeyExchangeModesExtension{Modes: []uint8{
+						tls.PskModeDHE,
 					}},
 					&tls.FakeRecordSizeLimitExtension{Limit: 0x4001},
 					&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
@@ -890,6 +908,12 @@ var Firefox_133 = ClientProfile{
 		":scheme",
 	},
 	connectionFlow: 12517377,
+	streamID: 15,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    41, // weight 42 on the wire, the byte is weight minus one
+	},
 }
 
 var Chrome_130_PSK = ClientProfile{
@@ -1267,6 +1291,7 @@ var Firefox_132 = ClientProfile{
 					&tls.SupportedPointsExtension{SupportedPoints: []byte{
 						tls.PointFormatUncompressed,
 					}},
+					&tls.SessionTicketExtension{},
 					&tls.ALPNExtension{AlpnProtocols: []string{
 						"h2",
 						"http/1.1",
@@ -1299,6 +1324,9 @@ var Firefox_132 = ClientProfile{
 						tls.PKCS1WithSHA512,
 						tls.ECDSAWithSHA1,
 						tls.PKCS1WithSHA1,
+					}},
+					&tls.PSKKeyExchangeModesExtension{Modes: []uint8{
+						tls.PskModeDHE,
 					}},
 					&tls.FakeRecordSizeLimitExtension{Limit: 0x4001},
 					&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
@@ -1348,6 +1376,12 @@ var Firefox_132 = ClientProfile{
 		":scheme",
 	},
 	connectionFlow: 12517377,
+	streamID: 15,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    41, // weight 42 on the wire, the byte is weight minus one
+	},
 }
 
 var Firefox_123 = ClientProfile{
@@ -1538,6 +1572,7 @@ var Firefox_120 = ClientProfile{
 						tls.PointFormatUncompressed,
 					}},
 
+					&tls.SessionTicketExtension{},
 					&tls.ALPNExtension{AlpnProtocols: []string{"h2", "http/1.1"}},
 					&tls.StatusRequestExtension{},
 					&tls.DelegatedCredentialsExtension{
@@ -1568,6 +1603,9 @@ var Firefox_120 = ClientProfile{
 						tls.PKCS1WithSHA512,
 						tls.ECDSAWithSHA1,
 						tls.PKCS1WithSHA1,
+					}},
+					&tls.PSKKeyExchangeModesExtension{Modes: []uint8{
+						tls.PskModeDHE,
 					}},
 					&tls.FakeRecordSizeLimitExtension{0x4001},
 					tls.BoringGREASEECH(),

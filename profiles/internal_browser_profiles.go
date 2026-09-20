@@ -2507,7 +2507,25 @@ var Firefox_117 = ClientProfile{
 }
 
 var Firefox_110 = ClientProfile{
-	clientHelloId: tls.HelloFirefox_110,
+	clientHelloId: tls.ClientHelloID{
+		Client:               "Firefox",
+		RandomExtensionOrder: false,
+		Version:              "110",
+		Seed:                 nil,
+		SpecFactory: func() (tls.ClientHelloSpec, error) {
+			// The utls HelloFirefox_110 spec is missing session_ticket and
+			// psk_key_exchange_modes, which every real Firefox sends and the
+			// neighbouring utls Firefox specs all carry.
+			spec, err := tls.UTLSIdToSpec(tls.HelloFirefox_110)
+			if err != nil {
+				return spec, err
+			}
+
+			spec.Extensions = firefoxResumptionTrail(spec.Extensions)
+
+			return spec, nil
+		},
+	},
 	settings: map[http2.SettingID]uint32{
 		http2.SettingHeaderTableSize:   65536,
 		http2.SettingInitialWindowSize: 131072,

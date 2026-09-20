@@ -35,10 +35,22 @@ import (
 // resumption, matching curl-impersonate's --no-tls-session-ticket), and
 // X25519MLKEM768 arrives at 26.0, not in 18.x.
 //
-// Do not combine these profiles with WithRandomTLSExtensionOrder. Safari has
-// never randomized its extension order; a shuffled Safari hello is one no real
-// Safari ever sent. The shuffle option belongs to Chromium shaped profiles,
-// Chrome and Opera alike, where the real browser shuffles per connection.
+// The HEADERS frame priority is part of the fingerprint too, and the
+// transport's default is Chrome's, weight 256 exclusive, so every Safari
+// profile carries its own: weight 255 non exclusive through 17.x, weight 256
+// non exclusive through 18.x, and from 26 a zero param, which makes the
+// transport omit the flag the way real Safari 26 does alongside its
+// NO_RFC7540_PRIORITIES setting.
+//
+// Two usage rules, both the opposite of the Chromium profiles:
+//
+//   - Do not combine these profiles with WithRandomTLSExtensionOrder. Safari
+//     has never randomized its extension order; a shuffled Safari hello is one
+//     no real Safari ever sent.
+//   - Use WithDisableHttp3. Real Safari speaks HTTP/3, but no Safari QUIC
+//     fingerprint has been captured here, so an HTTP/3 connection would carry
+//     Safari's TCP story and someone else's QUIC one. A Safari that only ever
+//     spoke TCP is ordinary; a Safari with the wrong QUIC handshake is not.
 //
 // The point releases below each carry the handshake of their era's capture,
 // because Apple changes the handshake per era, not per release. The eras and

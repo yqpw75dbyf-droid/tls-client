@@ -160,6 +160,37 @@ func TestMacSafariHTTP2Blocks(t *testing.T) {
 		}
 	}
 
+	// The HEADERS priority flag. The transport default is Chrome's, weight
+	// 256 exclusive, so every Safari profile must carry its own: weight 255
+	// non exclusive through 17.x, weight 256 non exclusive through 18.x, and
+	// from 26 a zero param, which makes the transport omit the flag the way
+	// real Safari 26 does.
+	for _, p := range []struct {
+		name    string
+		profile ClientProfile
+		weight  uint8
+	}{
+		{"Safari_15_6_1", Safari_15_6_1, 254},
+		{"Safari_16_0", Safari_16_0, 254},
+		{"Safari_17_0", Safari_17_0, 254},
+		{"Safari_18_0", Safari_18_0, 255},
+		{"Safari_18_5", Safari_18_5, 255},
+	} {
+		hp := p.profile.headerPriority
+		if hp == nil {
+			t.Errorf("%s has no headerPriority: the transport would fall back to Chrome's weight 256 exclusive", p.name)
+			continue
+		}
+
+		if hp.Exclusive || hp.StreamDep != 0 || hp.Weight != p.weight {
+			t.Errorf("%s headerPriority = %+v, want weight %d, not exclusive, dep 0", p.name, *hp, p.weight)
+		}
+	}
+
+	if hp := Safari_26_0.headerPriority; hp == nil || !hp.IsZero() {
+		t.Errorf("Safari_26_0 headerPriority = %+v, want the zero param that omits the flag", hp)
+	}
+
 	// 18.0 sent both 0x8 and 0x9, 18.5 and 26.0 dropped 0x8.
 	if _, ok := Safari_18_0.settings[http2.SettingID(0x8)]; !ok {
 		t.Error("Safari_18_0 lost setting 0x8")

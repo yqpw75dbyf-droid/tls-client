@@ -1783,6 +1783,11 @@ var Safari_15_6_1 = ClientProfile{
 		":authority",
 	},
 	connectionFlow: 10485760,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    254,
+	},
 }
 
 var Safari_16_0 = ClientProfile{
@@ -1802,6 +1807,11 @@ var Safari_16_0 = ClientProfile{
 		":authority",
 	},
 	connectionFlow: 10485760,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    254,
+	},
 }
 
 var Safari_Ipad_15_6 = ClientProfile{
@@ -1821,6 +1831,11 @@ var Safari_Ipad_15_6 = ClientProfile{
 		":authority",
 	},
 	connectionFlow: 10485760,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    254,
+	},
 }
 
 var Safari_IOS_17_0 = ClientProfile{
@@ -1928,6 +1943,11 @@ var Safari_IOS_17_0 = ClientProfile{
 		":authority",
 	},
 	connectionFlow: 10485760,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    254,
+	},
 }
 
 var Safari_IOS_26_0 = ClientProfile{
@@ -2035,6 +2055,11 @@ var Safari_IOS_26_0 = ClientProfile{
 		":path",
 	},
 	connectionFlow: 10420225,
+	// A zero PriorityParam makes the transport omit the priority flag on
+	// HEADERS entirely, which is what Safari 26 does; leaving it nil would
+	// fall back to the transport default, weight 256 exclusive, which is
+	// Chrome, and contradicts the NO_RFC7540_PRIORITIES setting above.
+	headerPriority: &http2.PriorityParam{},
 }
 
 var Safari_IOS_18_5 = ClientProfile{
@@ -2259,6 +2284,11 @@ var Safari_IOS_18_0 = ClientProfile{
 		":path",
 	},
 	connectionFlow: 10420225,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    255,
+	},
 }
 
 var Safari_IOS_16_0 = ClientProfile{
@@ -2278,6 +2308,11 @@ var Safari_IOS_16_0 = ClientProfile{
 		":authority",
 	},
 	connectionFlow: 10485760,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    254,
+	},
 }
 
 var Safari_IOS_15_5 = ClientProfile{
@@ -2297,6 +2332,11 @@ var Safari_IOS_15_5 = ClientProfile{
 		":authority",
 	},
 	connectionFlow: 10485760,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    254,
+	},
 }
 
 var Safari_IOS_15_6 = ClientProfile{
@@ -2316,6 +2356,11 @@ var Safari_IOS_15_6 = ClientProfile{
 		":authority",
 	},
 	connectionFlow: 10485760,
+	headerPriority: &http2.PriorityParam{
+		StreamDep: 0,
+		Exclusive: false,
+		Weight:    254,
+	},
 }
 
 var Firefox_117 = ClientProfile{

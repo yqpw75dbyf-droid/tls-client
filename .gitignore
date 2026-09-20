@@ -1,6 +1,14 @@
 .idea
 example/Example
 venv
+
+# Test files are kept local only, not published to the module.
+# The Go white-box tests (package profiles / tls_client / tls_client_cffi_src)
+# must stay next to the code they test, so they are ignored in place rather
+# than moved: `go test ./...` still runs locally, they just do not go to git.
+# The tests/ folder holds the black-box integration suite, also local only.
+*_test.go
+/tests/
 cffi_dist/example_typescript/node_modules
 cffi_dist/example_typescript/build
 cffi_dist/example_typescript/package-lock.json

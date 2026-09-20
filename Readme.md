@@ -156,6 +156,10 @@ CGO_ENABLED=1 go build -buildmode=c-shared -o dist/tls-client.so .   # .dll / .d
 
 ## Testing
 
+Test files are kept local only and are not published to the module: `*_test.go`
+and the `tests/` integration suite are git-ignored. They still run in a local
+checkout.
+
 ```bash
 go test ./...                 # library + profile tests
 # tests/ integration suite needs a SOCKS_5_PROXY env var for the proxy tests

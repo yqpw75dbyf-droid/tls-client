@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tls-client-yqpw"
+version = "1.23.0"
+description = "Python bindings for the tls-client Go core: browser-accurate TLS/HTTP2 fingerprinting"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+keywords = ["tls", "ja3", "ja4", "fingerprint", "http2", "scraping", "cffi"]
+
+[project.urls]
+Homepage = "https://github.com/yqpw75dbyf-droid/tls-client"
+
+[tool.setuptools]
+packages = ["tls_client"]
+
+[tool.setuptools.package-data]
+# Ship the compiled shared library if it has been placed here before packaging.
+tls_client = ["dependencies/*.so", "dependencies/*.dll", "dependencies/*.dylib"]

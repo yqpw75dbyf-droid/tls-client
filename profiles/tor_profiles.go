@@ -33,16 +33,35 @@ import (
 // weight 42, not exclusive, where the transport default would be Chrome's
 // weight 256 exclusive.
 //
-// Usage notes:
+// Usage. The handshake is the smaller half of looking like Tor Browser. The
+// audit behind this profile found the flags come from everything around it,
+// in this order:
 //
-//   - Do not combine with WithRandomTLSExtensionOrder: NSS never randomizes
-//     extension order.
+//   - The IP. This fingerprint has no legitimate baseline anywhere but Tor
+//     exit nodes. From a residential or datacenter address it is a
+//     near-impossible combination and scores as automation before the
+//     handshake is even weighed. Route it through the Tor daemon,
+//     WithProxyUrl("socks5://127.0.0.1:9050"), or use a Firefox profile
+//     instead: Tor Browser outside Tor is strictly worse than Firefox
+//     outside Tor.
+//   - The headers. With none set, the transport sends user-agent
+//     Go-http-client/2.0 and accept-encoding "gzip, deflate, br". Tor
+//     Browser 14.5 sends, in this order: user-agent, accept, accept-language,
+//     accept-encoding, sec-gpc, upgrade-insecure-requests, sec-fetch-dest,
+//     sec-fetch-mode, sec-fetch-site, sec-fetch-user, priority, te; with
+//     accept-language "en-US,en;q=0.5", accept-encoding "gzip, deflate, br,
+//     zstd", sec-gpc "1", priority "u=0, i" and te "trailers". Setting
+//     accept-encoding yourself turns off the transport's automatic
+//     decompression, so decode the body. The user agent is the Windows one
+//     on every platform, "Mozilla/5.0 (Windows NT 10.0; rv:128.0)
+//     Gecko/20100101 Firefox/128.0", because resistFingerprinting spoofs the
+//     OS; the macOS string in the capture is from a test build with that
+//     off. Never send sec-ch-ua: Firefox has no client hints.
 //   - WithDisableHttp3 is not a workaround here, it is correct behavior: Tor
 //     carries TCP only, so the real Tor Browser disables QUIC entirely and
 //     never speaks HTTP/3.
-//   - This fingerprint is expected to arrive from Tor exit nodes. Sites that
-//     cross check the two will find a Tor Browser handshake from a
-//     residential IP as odd as a Chrome handshake from an exit node.
+//   - Do not combine with WithRandomTLSExtensionOrder: NSS never randomizes
+//     extension order.
 //
 // Tor Browser 13.x (Firefox 115 ESR) and 15.x (Firefox 140 ESR, current since
 // October 2025) have no profile because no capture of them is published;
@@ -126,6 +145,16 @@ var Tor_14_5 = ClientProfile{
 						tls.PKCS1WithSHA1,
 					}},
 					&tls.FakeRecordSizeLimitExtension{Limit: 0x4001},
+					// The capture yaml records encrypted_client_hello as
+					// "length: 0". That is the capture tool not decoding the
+					// ECH body, not Tor sending an empty one: the same tool
+					// records length 0 for Firefox 135, which certainly sends
+					// a GREASE payload, and curl-impersonate builds both
+					// targets with --ech. An empty ECH extension is malformed
+					// (ECHClientHello needs at least its type byte) and
+					// Cloudflare rejects it with "error decoding message",
+					// measured. Tor Browser is Firefox here: GREASE ECH, same
+					// candidate suites and payload sizes as Firefox_135.
 					&tls.GREASEEncryptedClientHelloExtension{
 						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
 							{

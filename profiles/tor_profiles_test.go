@@ -29,9 +29,21 @@ func TestTorSpecMatchesTheCapture(t *testing.T) {
 	}
 
 	// The whole point of the profile: no resumption trail, no SCT, no cert
-	// compression, and no post quantum share on the 128 ESR base.
+	// compression, no post quantum share on the 128 ESR base. ECH stays the
+	// Firefox GREASE extension: the capture's "length: 0" for it is the
+	// capture tool not decoding the body (it says the same for Firefox 135),
+	// and an actually empty ECH extension is malformed and gets the
+	// handshake rejected by Cloudflare. Guard against that "fix" returning.
+	var greaseECH bool
+
 	for _, extension := range spec.Extensions {
 		switch v := extension.(type) {
+		case *tls.GREASEEncryptedClientHelloExtension:
+			greaseECH = true
+		case *tls.GenericExtension:
+			if v.Id == 0xfe0d {
+				t.Error("ECH is a bare extension: an empty ECH body is malformed and Cloudflare rejects the handshake")
+			}
 		case *tls.SessionTicketExtension:
 			t.Error("carries session_ticket: Tor strips it, that is its tell")
 		case *tls.PSKKeyExchangeModesExtension:
@@ -49,6 +61,10 @@ func TestTorSpecMatchesTheCapture(t *testing.T) {
 				t.Errorf("key shares = %v, capture says X25519 and P-256 only", groups)
 			}
 		}
+	}
+
+	if !greaseECH {
+		t.Error("no GREASE ECH extension: Tor Browser sends Firefox's")
 	}
 
 	// The HTTP/2 half: Firefox block, first stream 15, weight 42 on the wire

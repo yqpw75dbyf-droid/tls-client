@@ -15,6 +15,8 @@ CLIENT_IDENTIFIERS = frozenset(
         "chrome_144", "chrome_146", "chrome_150", "chrome_152", "chrome_153",
         # Edge
         "edge_153",
+        # Unbranded Chromium (no trust_anchors; e.g. CloakBrowser free build)
+        "chromium_146",
         # Brave
         "brave_146",
         # Safari desktop (macOS)

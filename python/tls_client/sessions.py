@@ -228,7 +228,7 @@ class Session:
         return client
 
 
-_CHROMIUM_PREFIXES = ("chrome_", "opera_", "edge_", "brave_")
+_CHROMIUM_PREFIXES = ("chrome_", "chromium_", "opera_", "edge_", "brave_")
 
 
 def _shuffles_by_default(identifier: str) -> bool:

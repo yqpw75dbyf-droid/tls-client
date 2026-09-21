@@ -1455,6 +1455,12 @@ var Chrome_120 = ClientProfile{
 						tls.CertCompressionBrotli,
 					}},
 					&tls.UtlsGREASEExtension{},
+					// Chrome 120 sends a padding extension when its key share is
+					// classical; only the post quantum key share made the hello big
+					// enough to drop it (refraction-networking/utls 8fe0b08).
+					// BoringPaddingStyle pads to 512 bytes when the hello is between
+					// 256 and 511 and omits the extension otherwise, as BoringSSL does.
+					&tls.UtlsPaddingExtension{GetPaddingLen: tls.BoringPaddingStyle},
 				},
 			}, nil
 		},

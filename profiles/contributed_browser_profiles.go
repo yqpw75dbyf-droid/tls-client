@@ -998,6 +998,11 @@ var Chrome_130_PSK = ClientProfile{
 					&tls.SNIExtension{},
 					&tls.ExtendedMasterSecretExtension{},
 					&tls.UtlsGREASEExtension{},
+					// This capture offers only a classical key share, and a classical
+					// Chromium hello carries the padding extension (self omitting past
+					// 511 bytes), as BoringSSL does; without it the hello was one
+					// extension short of what such a Chrome sends.
+					&tls.UtlsPaddingExtension{GetPaddingLen: tls.BoringPaddingStyle},
 					&tls.UtlsPreSharedKeyExtension{},
 				},
 			}, nil

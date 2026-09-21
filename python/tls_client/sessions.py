@@ -54,7 +54,7 @@ class Session:
         proxy: Optional[str] = None,
         proxies: Optional[Union[str, dict]] = None,
         timeout_seconds: int = 30,
-        random_tls_extension_order: bool = False,
+        random_tls_extension_order: Optional[bool] = None,
         force_http1: bool = False,
         disable_http3: bool = False,
         disable_session_tickets: bool = False,
@@ -88,6 +88,13 @@ class Session:
         # Accept both httpcloak's `proxy=` and requests' `proxies=`.
         self.proxy = _normalize_proxy(proxy, proxies)
         self.timeout_seconds = timeout_seconds
+        # Chromium shuffles its TLS extension order on every connection, so a
+        # Chromium preset with a fixed order sends the same JA3 forever and is
+        # flagged for it. Safari, Firefox and Tor never shuffle, so shuffling
+        # them is the tell instead. Default to what the real engine does;
+        # an explicit True/False always wins.
+        if random_tls_extension_order is None:
+            random_tls_extension_order = _shuffles_by_default(identifier) if not self.custom else False
         self.random_tls_extension_order = random_tls_extension_order
         self.force_http1 = force_http1
         self.disable_http3 = disable_http3
@@ -219,6 +226,14 @@ class Session:
         }
         client.update({k: v for k, v in optional.items() if v is not None})
         return client
+
+
+_CHROMIUM_PREFIXES = ("chrome_", "opera_", "edge_", "brave_")
+
+
+def _shuffles_by_default(identifier: str) -> bool:
+    """True for engines that randomize TLS extension order per connection."""
+    return identifier.startswith(_CHROMIUM_PREFIXES)
 
 
 def _normalize_proxy(proxy: Optional[str], proxies: Optional[Union[str, dict]]) -> str:

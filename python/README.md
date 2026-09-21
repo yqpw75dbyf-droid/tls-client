@@ -82,10 +82,18 @@ preset to build a profile from a captured fingerprint.
 92–136, Tor Browser 14.x and 15, Brave, and the app profiles (Nike, Zalando,
 okhttp, and so on).
 
-Two usage rules that are easy to get wrong:
+Three usage rules that are easy to get wrong:
 
-- **Safari and Tor:** do not set `random_tls_extension_order`. Their engines
-  never shuffle extensions; a shuffled hello is a tell.
+- **Headers are half the fingerprint.** With none set, the core sends
+  `user-agent: Go-http-client/2.0` and `accept-encoding: gzip, deflate, br`
+  — a perfect Chrome TLS hello attached to Go's default UA is flagged at the
+  header layer before TLS is even inspected. Always set the browser's real
+  `User-Agent`, `sec-ch-ua` (Chromium only), `accept-encoding` including
+  `zstd` for Chrome 123+, and the real `header_order`.
+- **Extension shuffle is automatic per engine.** Chromium presets (`chrome_`,
+  `opera_`, `edge_`, `brave_`) shuffle TLS extension order every connection,
+  as the real browser does; Safari, Firefox and Tor never do, so their presets
+  don't. Pass `random_tls_extension_order=True/False` only to override.
 - **Tor:** route through the Tor daemon (`proxy="socks5://127.0.0.1:9150"` for
   Tor Browser's own, `9050` for a standalone `tor`) and set
   `disable_http3=True`. A Tor fingerprint from a non-Tor IP is worse than none.

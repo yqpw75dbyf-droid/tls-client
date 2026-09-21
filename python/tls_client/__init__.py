@@ -12,7 +12,6 @@ The heavy lifting is done by a compiled Go shared library; see cffi.py for how
 to build and locate it.
 """
 
-from .headers import BROWSER_FAMILIES, browser_headers, resolve_preset
 from .response import Response
 from .sessions import (
     Session,
@@ -33,9 +32,6 @@ __all__ = [
     "Response",
     "TLSClientError",
     "CLIENT_IDENTIFIERS",
-    "BROWSER_FAMILIES",
-    "browser_headers",
-    "resolve_preset",
     "request",
     "get",
     "post",
@@ -46,4 +42,4 @@ __all__ = [
     "options",
 ]
 
-__version__ = "1.27.0"
+__version__ = "1.23.0"

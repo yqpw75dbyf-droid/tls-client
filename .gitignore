@@ -19,5 +19,3 @@ cffi_dist/example_csharp/bin/
 cffi_dist/example_csharp/obj/
 
 mise.local.toml
-# Python checks, local only too (see /tests/ above)
-/python/tests/

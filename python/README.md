@@ -45,32 +45,6 @@ Top-level `get`, `post`, `put`, `patch`, `delete`, `head`, `options` take a
 its connections, its TLS session cache. Reuse it for anything that should look
 like one browsing session.
 
-### Random presets and automatic headers
-
-`preset` also takes a family name or `"random"`, like primp's
-`impersonate="random"`. The pick happens once per Session, from the family's
-five newest releases (an old Chrome in today's traffic is a tell, not variety):
-
-```python
-tls_client.Session(preset="chrome")      # one of chrome_144 … chrome_153
-tls_client.Session(preset="safari")      # a recent Safari macOS
-tls_client.Session(preset="random")      # chrome / edge / opera / firefox / safari
-```
-
-Families: `chrome`, `chromium`, `edge`, `brave`, `opera`, `firefox`, `tor`,
-`safari`, `safari_ios`, `safari_ipad` (`tls_client.BROWSER_FAMILIES`).
-
-Every browser preset, random or not, starts with the real browser's navigation
-headers in the real order: `user-agent`, `accept`, `accept-encoding`,
-`accept-language`, the `sec-fetch-*` set, `priority`, `te` for Firefox/Tor,
-and for Chromium the `sec-ch-ua` trio computed with Chromium's own brand
-algorithm (`"Google Chrome";v="153", "Not_A Brand";v="8", "Chromium";v="153"`
-for Chrome 153; `OPR/` and `"Opera"` for Opera on its Chromium base; `Edg/`
-and `"Microsoft Edge"` for Edge). Your `headers=` override by name, your
-`header_order=` wins outright, and `default_headers=False` turns the whole
-thing off. `tls_client.browser_headers("opera_125")` returns the set for
-inspection.
-
 ### Request arguments
 
 | argument | meaning |
@@ -110,13 +84,12 @@ okhttp, and so on).
 
 Three usage rules that are easy to get wrong:
 
-- **Headers are half the fingerprint.** A perfect Chrome TLS hello attached
-  to Go's default `user-agent: Go-http-client/2.0` is flagged at the header
-  layer before TLS is even inspected. The Session sets the browser's real
-  headers and order for you (see above); if you pass `default_headers=False`
-  or drive the C library directly, set `User-Agent`, `sec-ch-ua` (Chromium
-  only), `accept-encoding` including `zstd` for Chrome 123+, and the real
-  `header_order` yourself.
+- **Headers are half the fingerprint.** With none set, the core sends
+  `user-agent: Go-http-client/2.0` and `accept-encoding: gzip, deflate, br`
+  — a perfect Chrome TLS hello attached to Go's default UA is flagged at the
+  header layer before TLS is even inspected. Always set the browser's real
+  `User-Agent`, `sec-ch-ua` (Chromium only), `accept-encoding` including
+  `zstd` for Chrome 123+, and the real `header_order`.
 - **Extension shuffle is automatic per engine.** Chromium presets (`chrome_`,
   `opera_`, `edge_`, `brave_`) shuffle TLS extension order every connection,
   as the real browser does; Safari, Firefox and Tor never do, so their presets

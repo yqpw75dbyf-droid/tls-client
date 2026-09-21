@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tls-client-yqpw"
-version = "1.23.0"
+version = "1.27.0"
 description = "Python bindings for the tls-client Go core: browser-accurate TLS/HTTP2 fingerprinting"
 readme = "README.md"
 requires-python = ">=3.8"

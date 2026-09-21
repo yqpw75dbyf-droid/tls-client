@@ -9,14 +9,11 @@ import tls_client
 r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_153")
 print("one-off:", r.status_code, r.protocol)
 
-# A session keeps cookies and connections across requests.
-with tls_client.Session(preset="firefox_135") as session:
-    session.headers = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
-        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "accept-language": "en-US,en;q=0.5",
-    }
-    session.header_order = ["user-agent", "accept", "accept-language"]
+# A session keeps cookies and connections across requests. A family name
+# picks a recent version at random, and the browser's real headers (user-agent,
+# sec-ch-ua, accept-*, sec-fetch-*, in its order) come with the preset.
+with tls_client.Session(preset="random") as session:
+    print("picked:", session.client_identifier, session.headers["user-agent"])
 
     resp = session.get("https://tls.peet.ws/api/all")
     print("session:", resp.status_code, resp.protocol)

@@ -13,8 +13,8 @@ import uuid
 from typing import Any, Optional, Union
 
 from . import cffi
+from .headers import browser_headers, resolve_preset
 from .response import Response, build_response
-from .settings import CLIENT_IDENTIFIERS
 
 _METHODS_WITH_BODY = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -51,6 +51,7 @@ class Session:
         connection_flow: Optional[int] = None,
         header_order: Optional[list] = None,
         headers: Optional[dict] = None,
+        default_headers: bool = True,
         proxy: Optional[str] = None,
         proxies: Optional[Union[str, dict]] = None,
         timeout_seconds: int = 30,
@@ -62,15 +63,32 @@ class Session:
         catch_panics: bool = False,
         debug: bool = False,
     ):
-        # preset is the httpcloak-flavoured alias for client_identifier.
+        # preset is the httpcloak-flavoured alias for client_identifier. A
+        # family name ("chrome", "safari"...) or "random" picks a concrete
+        # version here, once per Session, like primp's impersonate="random".
         identifier = preset or client_identifier
         self.custom = ja3_string is not None
-        if not self.custom and identifier not in CLIENT_IDENTIFIERS:
-            raise TLSClientError(
-                f"unknown client identifier {identifier!r}. "
-                "See tls_client.CLIENT_IDENTIFIERS for the full list, "
-                "or pass ja3_string=... to build a custom profile."
-            )
+        if not self.custom:
+            try:
+                identifier = resolve_preset(identifier)
+            except KeyError:
+                raise TLSClientError(
+                    f"unknown client identifier {identifier!r}. "
+                    "See tls_client.CLIENT_IDENTIFIERS for the full list, "
+                    "a family name or 'random', or pass ja3_string=... "
+                    "to build a custom profile."
+                ) from None
+
+        # The real browser's navigation headers, in its order, so the header
+        # layer tells the same story as the handshake. Caller headers override
+        # by name; header_order, if given, wins outright.
+        defaults = browser_headers(identifier) if default_headers and not self.custom else None
+        if defaults:
+            merged = dict(defaults)
+            for k, v in (headers or {}).items():
+                merged[k.lower()] = v
+            headers = merged
+            header_order = header_order or list(defaults)
 
         self.session_id = str(uuid.uuid4())
         self.client_identifier = identifier
@@ -269,8 +287,8 @@ def _encode_body(method, data, json_body):
 # -- module-level one-off helpers (httpcloak style) -----------------------
 def request(method: str, url: str, *, preset: str = "chrome_153", **kwargs) -> Response:
     session_kwargs = {}
-    for key in ("proxy", "proxies", "header_order", "headers", "force_http1",
-                "disable_http3", "random_tls_extension_order", "timeout_seconds"):
+    for key in ("proxy", "proxies", "header_order", "headers", "default_headers",
+                "force_http1", "disable_http3", "random_tls_extension_order", "timeout_seconds"):
         if key in kwargs:
             session_kwargs[key] = kwargs.pop(key)
     with Session(preset=preset, **session_kwargs) as session:

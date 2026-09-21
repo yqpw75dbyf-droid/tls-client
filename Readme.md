@@ -140,10 +140,7 @@ The handshake is only half of looking like a browser. Match the rest too:
   fingerprint from a non-Tor IP is worse than not impersonating Tor.
 - **Every profile:** send headers that tell the same story — the right
   `User-Agent`, the matching `sec-ch-ua` (or none, for Firefox/Safari/Tor,
-  which have no client hints), and the browser's real header order. The
-  Python `Session` does this automatically for every browser preset, and
-  accepts a family name or `"random"` to pick a recent version per session;
-  Go callers set the headers themselves.
+  which have no client hints), and the browser's real header order.
 
 ## Language bindings
 

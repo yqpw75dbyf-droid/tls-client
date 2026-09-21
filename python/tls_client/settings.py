@@ -38,7 +38,7 @@ CLIENT_IDENTIFIERS = frozenset(
         "firefox_123", "firefox_132", "firefox_133", "firefox_135",
         "firefox_147", "firefox_148",
         # Tor Browser
-        "tor_14_0", "tor_14_5", "tor_15_0",
+        "tor_13_0", "tor_13_5", "tor_14_0", "tor_14_5", "tor_15_0",
         # Opera
         "opera_89", "opera_90", "opera_91", "opera_92", "opera_93",
         "opera_94", "opera_95", "opera_96", "opera_97", "opera_98",

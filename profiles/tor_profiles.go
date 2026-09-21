@@ -378,3 +378,87 @@ var Tor_15_0 = ClientProfile{
 		Weight:    41, // weight 42 on the wire, the byte is weight minus one
 	},
 }
+
+// helloIDWithoutResumptionTrail relabels a Firefox ClientHelloID and drops
+// session_ticket and psk_key_exchange_modes from the spec it resolves to,
+// which is the Tor Browser delta: every Tor capture here (14.5 on Firefox
+// 128 ESR, 15.0 on Firefox 140 ESR) is its Firefox ESR base minus exactly
+// those two extensions.
+func helloIDWithoutResumptionTrail(client, version string, source tls.ClientHelloID) tls.ClientHelloID {
+	return tls.ClientHelloID{
+		Client:               client,
+		Version:              version,
+		RandomExtensionOrder: source.RandomExtensionOrder,
+		Seed:                 source.Seed,
+		Weights:              source.Weights,
+		SpecFactory: func() (tls.ClientHelloSpec, error) {
+			spec, err := source.ToSpec()
+			if err != nil {
+				spec, err = tls.UTLSIdToSpec(source)
+				if err != nil {
+					return spec, err
+				}
+			}
+
+			kept := make([]tls.TLSExtension, 0, len(spec.Extensions))
+
+			for _, extension := range spec.Extensions {
+				switch extension.(type) {
+				case *tls.SessionTicketExtension, *tls.PSKKeyExchangeModesExtension:
+					continue
+				}
+
+				kept = append(kept, extension)
+			}
+
+			spec.Extensions = kept
+
+			return spec, nil
+		},
+	}
+}
+
+// Tor_13_5 is Tor Browser 13.x on Firefox 115 ESR (13.0 from October 2023,
+// 13.5 from June 2024, supported into 2025). No capture of it is published
+// and this machine could not run the archived builds, so it is derived, the
+// way the two captured Tor generations prove it must be: the Firefox ESR base
+// minus session_ticket and psk_key_exchange_modes.
+//
+// The base is Firefox_117, and that stands in for 115 ESR on evidence rather
+// than proximity: lwthiker/curl-impersonate's real captures of Firefox 95,
+// 98, 100, 102, 109 and 117.0.1 all show one identical hello, the same
+// extension order, 17 cipher suites, X25519 and P-256 key shares, groups
+// through ffdhe3072, eleven signature algorithms, delegated_credentials,
+// record_size_limit and a padding extension, with no ECH and no certificate
+// compression. ESR 115 sits inside that unchanged span and took only
+// security fixes, so it sends the same hello. Removing the two resumption
+// extensions leaves 13: the Tor 14.5 list with padding where 14.5 has ECH,
+// which is exactly the ECH-before-and-after difference between Firefox 115
+// and 128.
+//
+// The HTTP/2 half is inherited from Firefox_117 unchanged: the three entry
+// SETTINGS block of that era, the six frame PRIORITY tree on streams 3
+// through 13, and HEADERS depending on stream 13 with weight 42, so the first
+// request opens on stream 15. Firefox 128 had dropped the tree by the time
+// the Tor 14.5 capture was made; Firefox 115 still sent it, and Tor Browser
+// changes none of Firefox's HTTP/2 behavior in either captured generation.
+//
+// Usage is the same as every Tor profile: through the Tor daemon, HTTP/3 off,
+// no extension shuffle, user agent "Mozilla/5.0 (Windows NT 10.0; rv:109.0)
+// Gecko/20100101 Firefox/115.0" (Tor Browser 13 froze rv at 109.0 like
+// Firefox 115 ESR did).
+var Tor_13_5 = func() ClientProfile {
+	profile := Firefox_117
+	profile.clientHelloId = helloIDWithoutResumptionTrail("Tor", "13.5", Firefox_117.clientHelloId)
+
+	return profile
+}()
+
+// Tor_13_0 is the same Firefox 115 ESR base as 13.5; the 13.x line keeps one
+// handshake.
+var Tor_13_0 = func() ClientProfile {
+	profile := Tor_13_5
+	profile.clientHelloId = derivedHelloID("Tor", "13.0", Tor_13_5.clientHelloId)
+
+	return profile
+}()

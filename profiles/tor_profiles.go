@@ -1,9 +1,10 @@
 package profiles
 
 import (
+	"slices"
+
 	"github.com/bogdanfinn/fhttp/http2"
 	tls "github.com/bogdanfinn/utls"
-	"github.com/bogdanfinn/utls/dicttls"
 )
 
 // Tor Browser is Firefox ESR with the resumption trail stripped. Tor Browser
@@ -63,9 +64,9 @@ import (
 //   - Do not combine with WithRandomTLSExtensionOrder: NSS never randomizes
 //     extension order.
 //
-// Tor Browser 15.x, the current line, is Tor_15_0 below, captured from a
-// real install. Tor Browser 13.x (Firefox 115 ESR) has no profile because no
-// capture of it exists.
+// Tor Browser 15.x, the current stable line, is Tor_15_0 below, captured from
+// real installs; 16.x on Firefox 153 ESR is Tor_16_0, captured from its alpha.
+// Tor Browser 13.x (Firefox 115 ESR) is derived, see Tor_13_5.
 var Tor_14_5 = ClientProfile{
 	clientHelloId: tls.ClientHelloID{
 		Client:               "Tor",
@@ -152,25 +153,9 @@ var Tor_14_5 = ClientProfile{
 					// targets with --ech. An empty ECH extension is malformed
 					// (ECHClientHello needs at least its type byte) and
 					// Cloudflare rejects it with "error decoding message",
-					// measured. Tor Browser is Firefox here: GREASE ECH, same
-					// candidate suites and payload sizes as Firefox_135.
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223}, // +16: 144, 239
-					},
+					// measured. Tor Browser is Firefox here: NSS's GREASE ECH,
+					// whose 13 extension, 15 suite inner hello pads to 223.
+					nssGREASEECH(223),
 				},
 			}, nil
 		},
@@ -243,6 +228,13 @@ var Tor_14_0 = func() ClientProfile {
 // with session_ticket and psk_key_exchange_modes removed, which is how the
 // 14.5 profile relates to Firefox 128 too. It is written out rather than
 // derived so that the capture, not another profile, is its source.
+//
+// Re-captured the same way on 2026-10-02 from Tor Browser 15.0.23 (Firefox
+// 140.16.0) and 15.0.24 (Firefox 140.17.0, the last 15.0 release), three runs
+// each: every field above is unchanged, so this profile covers the whole
+// 15.0 line. Those runs also pinned the ECH GREASE, which the first capture
+// left open: 281 bytes on every run, AEAD AES-128-GCM or ChaCha20-Poly1305,
+// never AES-256-GCM; see nssGREASEECH.
 var Tor_15_0 = ClientProfile{
 	clientHelloId: tls.ClientHelloID{
 		Client:               "Tor",
@@ -331,23 +323,7 @@ var Tor_15_0 = ClientProfile{
 						tls.CertCompressionBrotli,
 						tls.CertCompressionZstd,
 					}},
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223}, // +16: 144, 239
-					},
+					nssGREASEECH(223),
 				},
 			}, nil
 		},
@@ -379,43 +355,48 @@ var Tor_15_0 = ClientProfile{
 	},
 }
 
+// Tor_16_0 is Tor Browser 16 on Firefox 153 ESR. Captured from the 16.0a13
+// alpha (Firefox 153.4.0, 2026-10-01; no 16.0 stable is out yet, and the
+// stable line ships on the same ESR) on Windows, driven headless through
+// Marionette over a live Tor circuit against tls.peet.ws/api/all, three runs
+// on 2026-10-02:
+//
+//   - JA4 t13d1615h2_86a278354501_a54fffd0eb61
+//   - 16 cipher suites: Tor_15_0's list without
+//     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA; its AES-256 CBC sibling stays
+//   - everything else exactly as Tor_15_0: the same 15 extensions in the same
+//     order, groups, key shares, signature algorithms, delegated credentials,
+//     record_size_limit, certificate compression, ECH GREASE at 281 bytes on
+//     AES-128-GCM or ChaCha20-Poly1305, and the same HTTP/2 SETTINGS, window
+//     update, stream 3 and weight 42
+//   - request headers in Tor_15_0's order, with user-agent "Mozilla/5.0
+//     (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0"
+//     and accept-language now "en-US,en;q=0.9" where 15 sent q=0.5
+var Tor_16_0 = func() ClientProfile {
+	profile := Tor_15_0
+	profile.clientHelloId = derivedHelloID("Tor", "16.0", Tor_15_0.clientHelloId, func(spec *tls.ClientHelloSpec) {
+		spec.CipherSuites = slices.DeleteFunc(spec.CipherSuites, func(suite uint16) bool {
+			return suite == tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+		})
+	})
+
+	return profile
+}()
+
 // helloIDWithoutResumptionTrail relabels a Firefox ClientHelloID and drops
 // session_ticket and psk_key_exchange_modes from the spec it resolves to,
 // which is the Tor Browser delta: every Tor capture here (14.5 on Firefox
 // 128 ESR, 15.0 on Firefox 140 ESR) is its Firefox ESR base minus exactly
 // those two extensions.
 func helloIDWithoutResumptionTrail(client, version string, source tls.ClientHelloID) tls.ClientHelloID {
-	return tls.ClientHelloID{
-		Client:               client,
-		Version:              version,
-		RandomExtensionOrder: source.RandomExtensionOrder,
-		Seed:                 source.Seed,
-		Weights:              source.Weights,
-		SpecFactory: func() (tls.ClientHelloSpec, error) {
-			spec, err := source.ToSpec()
-			if err != nil {
-				spec, err = tls.UTLSIdToSpec(source)
-				if err != nil {
-					return spec, err
-				}
-			}
+	return derivedHelloID(client, version, source, withoutExtensions(func(extension tls.TLSExtension) bool {
+		switch extension.(type) {
+		case *tls.SessionTicketExtension, *tls.PSKKeyExchangeModesExtension:
+			return true
+		}
 
-			kept := make([]tls.TLSExtension, 0, len(spec.Extensions))
-
-			for _, extension := range spec.Extensions {
-				switch extension.(type) {
-				case *tls.SessionTicketExtension, *tls.PSKKeyExchangeModesExtension:
-					continue
-				}
-
-				kept = append(kept, extension)
-			}
-
-			spec.Extensions = kept
-
-			return spec, nil
-		},
-	}
+		return false
+	}))
 }
 
 // Tor_13_5 is Tor Browser 13.x on Firefox 115 ESR (13.0 from October 2023,

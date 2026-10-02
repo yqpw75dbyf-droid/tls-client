@@ -13,8 +13,9 @@ CLIENT_IDENTIFIERS = frozenset(
         "chrome_108", "chrome_109", "chrome_110", "chrome_111", "chrome_112",
         "chrome_117", "chrome_120", "chrome_124", "chrome_131", "chrome_133",
         "chrome_144", "chrome_146", "chrome_150", "chrome_152", "chrome_153",
+        "chrome_154",
         # Edge
-        "edge_153",
+        "edge_153", "edge_154",
         # Unbranded Chromium (no trust_anchors; e.g. CloakBrowser free build)
         "chromium_146",
         # Brave
@@ -39,6 +40,7 @@ CLIENT_IDENTIFIERS = frozenset(
         "firefox_147", "firefox_148",
         # Tor Browser
         "tor_13_0", "tor_13_5", "tor_14_0", "tor_14_5", "tor_15_0",
+        "tor_16_0",
         # Opera
         "opera_89", "opera_90", "opera_91", "opera_92", "opera_93",
         "opera_94", "opera_95", "opera_96", "opera_97", "opera_98",

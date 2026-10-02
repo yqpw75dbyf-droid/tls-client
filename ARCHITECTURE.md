@@ -122,16 +122,16 @@ first stream id, header-frame priority) and optional HTTP/3 settings.
 
 ```
 profiles.go                     MappedTLSClients: identifier string → ClientProfile
-                                (150 entries; the registry the CFFI layer looks up)
+                                (172 entries; the registry the CFFI layer looks up)
 internal_browser_profiles.go    Chrome, Firefox, Safari desktop/iOS, base Opera
 contributed_browser_profiles.go community-contributed Chrome/Firefox/Brave
-chrome_profiles.go              Chrome 153 + Edge relabel helper input
-edge_profiles.go                Edge 153 (Chrome 152 minus trust_anchors)
+chrome_profiles.go              Chrome 153, 154 (sorted trust_anchors)
+edge_profiles.go                Edge 153, 154 (Chrome 152 minus trust_anchors)
 opera_profiles.go               Opera 92–136 (relabelled Chrome by Chromium base)
 safari_macos_profiles.go        Safari macOS 15.3–26.6 (relabelled iOS captures)
-tor_profiles.go                 Tor Browser 14.x, 15 (Firefox ESR minus resumption)
-firefox_profiles.go             resumption-trail helper for older Firefox specs
-extension_data.go               trust_anchors (0xca34) captured payloads + shuffling
+tor_profiles.go                 Tor Browser 13.x-16 (Firefox ESR minus resumption)
+firefox_profiles.go             resumption-trail helper, NSS-shaped ECH GREASE
+extension_data.go               trust_anchors (0xca34) payloads, shuffled (153) or sorted (154)
 grease.go                       random GREASE signature scheme per connection
 internal_custom_profiles.go     app profiles (Nike, Zalando, MMS, Mesh, okhttp, ...)
 contributed_custom_profiles.go  more app profiles
@@ -214,7 +214,7 @@ python/
 ### Python request flow
 
 ```
-tls_client.get(url, preset="chrome_153")            module-level helper
+tls_client.get(url, preset="chrome_154")            module-level helper
   └─ Session(preset=...)                             validate identifier vs CLIENT_IDENTIFIERS
        └─ Session.request("GET", url, ...)
             ├─ build query string from params

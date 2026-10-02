@@ -2,7 +2,7 @@
 
     import tls_client
 
-    r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_153")
+    r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_154")
     print(r.status_code, r.protocol)
 
     with tls_client.Session(preset="firefox_135") as s:

@@ -85,7 +85,12 @@ import (
 // are resolved from the "Client-Version" string, so a bare rename would make
 // that lookup miss and fail at handshake; resolving through the source first
 // keeps both kinds of profile working.
-func derivedHelloID(client, version string, source tls.ClientHelloID) tls.ClientHelloID {
+//
+// Any edits run on the resolved spec, in order, at every handshake, so a
+// derived profile can differ from its source by an extension or a cipher
+// suite while everything random in the source (GREASE, key shares, ECH
+// GREASE) stays fresh per connection.
+func derivedHelloID(client, version string, source tls.ClientHelloID, edits ...func(*tls.ClientHelloSpec)) tls.ClientHelloID {
 	return tls.ClientHelloID{
 		Client:               client,
 		Version:              version,
@@ -93,12 +98,36 @@ func derivedHelloID(client, version string, source tls.ClientHelloID) tls.Client
 		Seed:                 source.Seed,
 		Weights:              source.Weights,
 		SpecFactory: func() (tls.ClientHelloSpec, error) {
-			if spec, err := source.ToSpec(); err == nil {
-				return spec, nil
+			spec, err := source.ToSpec()
+			if err != nil {
+				spec, err = tls.UTLSIdToSpec(source)
+				if err != nil {
+					return spec, err
+				}
 			}
 
-			return tls.UTLSIdToSpec(source)
+			for _, edit := range edits {
+				edit(&spec)
+			}
+
+			return spec, nil
 		},
+	}
+}
+
+// withoutExtensions returns a spec edit that drops every extension for which
+// drop reports true.
+func withoutExtensions(drop func(tls.TLSExtension) bool) func(*tls.ClientHelloSpec) {
+	return func(spec *tls.ClientHelloSpec) {
+		kept := make([]tls.TLSExtension, 0, len(spec.Extensions))
+
+		for _, extension := range spec.Extensions {
+			if !drop(extension) {
+				kept = append(kept, extension)
+			}
+		}
+
+		spec.Extensions = kept
 	}
 }
 

@@ -3,7 +3,6 @@ package profiles
 import (
 	"github.com/bogdanfinn/fhttp/http2"
 	tls "github.com/bogdanfinn/utls"
-	"github.com/bogdanfinn/utls/dicttls"
 )
 
 var Firefox_148 = ClientProfile{
@@ -100,23 +99,7 @@ var Firefox_148 = ClientProfile{
 						tls.CertCompressionBrotli,
 						tls.CertCompressionZstd,
 					}},
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223},
-					},
+					nssGREASEECH(255),
 				},
 			}, nil
 		},
@@ -169,7 +152,7 @@ var Firefox_148 = ClientProfile{
 	},
 	http3PriorityParam:    0,
 	http3SendGreaseFrames: true,
-	streamID: 15,
+	streamID:              15,
 }
 
 var Firefox_147 = ClientProfile{
@@ -265,23 +248,7 @@ var Firefox_147 = ClientProfile{
 						tls.CertCompressionBrotli,
 						tls.CertCompressionZstd,
 					}},
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223},
-					},
+					nssGREASEECH(223),
 				},
 			}, nil
 		},
@@ -334,7 +301,7 @@ var Firefox_147 = ClientProfile{
 	},
 	http3PriorityParam:    0,
 	http3SendGreaseFrames: true,
-	streamID: 15,
+	streamID:              15,
 }
 
 var Firefox_147_PSK = ClientProfile{
@@ -424,23 +391,7 @@ var Firefox_147_PSK = ClientProfile{
 						tls.CertCompressionBrotli,
 						tls.CertCompressionZstd,
 					}},
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223},
-					},
+					nssGREASEECH(223),
 					&tls.UtlsPreSharedKeyExtension{OmitEmptyPsk: true},
 				},
 			}, nil
@@ -494,7 +445,7 @@ var Firefox_147_PSK = ClientProfile{
 	},
 	http3PriorityParam:    0,
 	http3SendGreaseFrames: true,
-	streamID: 15,
+	streamID:              15,
 }
 
 var Firefox_146_PSK = ClientProfile{
@@ -588,23 +539,7 @@ var Firefox_146_PSK = ClientProfile{
 						tls.CertCompressionBrotli,
 						tls.CertCompressionZstd,
 					}},
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223},
-					},
+					nssGREASEECH(223),
 					&tls.UtlsPreSharedKeyExtension{OmitEmptyPsk: true},
 				},
 			}, nil
@@ -729,23 +664,7 @@ var Firefox_135 = ClientProfile{
 						tls.CertCompressionBrotli,
 						tls.CertCompressionZstd,
 					}},
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223}, // +16: 144, 239
-					},
+					nssGREASEECH(223),
 				},
 			}, nil
 		},
@@ -769,7 +688,7 @@ var Firefox_135 = ClientProfile{
 		":scheme",
 	},
 	connectionFlow: 12517377,
-	streamID: 15,
+	streamID:       15,
 	headerPriority: &http2.PriorityParam{
 		StreamDep: 0,
 		Exclusive: false,
@@ -868,23 +787,7 @@ var Firefox_133 = ClientProfile{
 						tls.CertCompressionBrotli,
 						tls.CertCompressionZstd,
 					}},
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223}, // +16: 144, 239
-					},
+					nssGREASEECH(223),
 				},
 			}, nil
 		},
@@ -908,7 +811,7 @@ var Firefox_133 = ClientProfile{
 		":scheme",
 	},
 	connectionFlow: 12517377,
-	streamID: 15,
+	streamID:       15,
 	headerPriority: &http2.PriorityParam{
 		StreamDep: 0,
 		Exclusive: false,
@@ -1339,23 +1242,7 @@ var Firefox_132 = ClientProfile{
 						tls.CertCompressionBrotli,
 						tls.CertCompressionZstd,
 					}},
-					&tls.GREASEEncryptedClientHelloExtension{
-						CandidateCipherSuites: []tls.HPKESymmetricCipherSuite{
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_128_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_AES_256_GCM,
-							},
-							{
-								KdfId:  dicttls.HKDF_SHA256,
-								AeadId: dicttls.AEAD_CHACHA20_POLY1305,
-							},
-						},
-						CandidatePayloadLens: []uint16{128, 223}, // +16: 144, 239
-					},
+					nssGREASEECH(223),
 				},
 			}, nil
 		},
@@ -1381,7 +1268,7 @@ var Firefox_132 = ClientProfile{
 		":scheme",
 	},
 	connectionFlow: 12517377,
-	streamID: 15,
+	streamID:       15,
 	headerPriority: &http2.PriorityParam{
 		StreamDep: 0,
 		Exclusive: false,
@@ -1471,7 +1358,7 @@ var Firefox_123 = ClientProfile{
 						tls.PskModeDHE,
 					}},
 					&tls.FakeRecordSizeLimitExtension{0x4001},
-					tls.BoringGREASEECH(),
+					nssGREASEECH(223),
 				}}, nil
 		},
 	},
@@ -1613,7 +1500,7 @@ var Firefox_120 = ClientProfile{
 						tls.PskModeDHE,
 					}},
 					&tls.FakeRecordSizeLimitExtension{0x4001},
-					tls.BoringGREASEECH(),
+					nssGREASEECH(223),
 				}}, nil
 		},
 	},

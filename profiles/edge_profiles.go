@@ -42,36 +42,11 @@ import (
 // extension from the spec it resolves to, pinning the spec to the source the
 // way derivedHelloID does.
 func helloIDWithoutExtension(client, version string, source tls.ClientHelloID, id uint16) tls.ClientHelloID {
-	return tls.ClientHelloID{
-		Client:               client,
-		Version:              version,
-		RandomExtensionOrder: source.RandomExtensionOrder,
-		Seed:                 source.Seed,
-		Weights:              source.Weights,
-		SpecFactory: func() (tls.ClientHelloSpec, error) {
-			spec, err := source.ToSpec()
-			if err != nil {
-				spec, err = tls.UTLSIdToSpec(source)
-				if err != nil {
-					return spec, err
-				}
-			}
+	return derivedHelloID(client, version, source, withoutExtensions(func(extension tls.TLSExtension) bool {
+		generic, ok := extension.(*tls.GenericExtension)
 
-			kept := make([]tls.TLSExtension, 0, len(spec.Extensions))
-
-			for _, extension := range spec.Extensions {
-				if generic, ok := extension.(*tls.GenericExtension); ok && generic.Id == id {
-					continue
-				}
-
-				kept = append(kept, extension)
-			}
-
-			spec.Extensions = kept
-
-			return spec, nil
-		},
-	}
+		return ok && generic.Id == id
+	}))
 }
 
 const extensionTrustAnchorsID uint16 = 0xca34
@@ -87,6 +62,29 @@ var (
 	Edge_153_PSK = func() ClientProfile {
 		profile := Chrome_152_PSK
 		profile.clientHelloId = helloIDWithoutExtension("Edge", "153_PSK", Chrome_152_PSK.clientHelloId, extensionTrustAnchorsID)
+
+		return profile
+	}()
+
+	// Edge 154 is Edge 153 relabelled. Measured on this machine's Edge
+	// 154.0.4258.48 on Windows, five headless processes against
+	// tls.peet.ws/api/all on 2026-10-02: JA4 t13d1516h2_8daaf6152771_806a8c22fdea
+	// every run, the Edge_153 extension set, cipher suites, signature
+	// algorithms and key shares, still no trust_anchors (so Chrome 154's new
+	// sort has nothing to act on here), and the same HTTP/2 fingerprint. Its
+	// headers: sec-ch-ua "Chromium";v="154", "Microsoft Edge";v="154",
+	// "Not A(Brand";v="99", and a user agent ending
+	// "Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0".
+	Edge_154 = func() ClientProfile {
+		profile := Chrome_152
+		profile.clientHelloId = helloIDWithoutExtension("Edge", "154", Chrome_152.clientHelloId, extensionTrustAnchorsID)
+
+		return profile
+	}()
+
+	Edge_154_PSK = func() ClientProfile {
+		profile := Chrome_152_PSK
+		profile.clientHelloId = helloIDWithoutExtension("Edge", "154_PSK", Chrome_152_PSK.clientHelloId, extensionTrustAnchorsID)
 
 		return profile
 	}()

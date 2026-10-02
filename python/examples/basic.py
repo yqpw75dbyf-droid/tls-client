@@ -6,7 +6,7 @@
 import tls_client
 
 # One-off request, httpcloak style.
-r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_153")
+r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_154")
 print("one-off:", r.status_code, r.protocol)
 
 # A session keeps cookies and connections across requests.

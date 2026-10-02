@@ -1,12 +1,14 @@
 package profiles
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 )
 
 // Captured payloads for the trust_anchors extension (0xca34). A payload is a
@@ -32,6 +34,24 @@ import (
 const chrome152TrustAnchorsCapture = "00b80582df13020108839a648c9b2d010c08839a648c9b2d010704d679090c08839a648c9b2d010a04d679090b08839a648c9b2d010d0582df13020e08839a648c9b2d010b04d67909050582df13020d0582df13021404d679090404d679090804d679090d04d679090a04d679090708839a648c9b2d011204d67909010582df13020608839a648c9b2d01080582df13021208839a648c9b2d011304d679090f0582df13021308839a648c9b2d01090582df13020f04d6790906"
 
 var chrome152TrustAnchors = shuffleTrustAnchors(mustSplitTrustAnchors(chrome152TrustAnchorsCapture))
+
+// Chrome 154 sends the same 28 IDs as 152 and 153, but sorted: Chromium now
+// sorts the list before encoding it, so every process and every connection
+// writes one order, ascending by ID bytes. Measured on branded Chrome
+// 154.0.8037.58 on Windows, five separate processes on 2026-10-02, each one
+// sending exactly this payload:
+//
+//	00b80582df1302010582df1302060582df13020d0582df13020e0582df13020f
+//	0582df1302120582df1302130582df13021408839a648c9b2d010708839a648c9b2d0108
+//	08839a648c9b2d010908839a648c9b2d010a08839a648c9b2d010b08839a648c9b2d010c
+//	08839a648c9b2d010d08839a648c9b2d011208839a648c9b2d011304d679090104d67909
+//	0404d679090504d679090604d679090704d679090804d679090a04d679090b04d679090c
+//	04d679090d04d679090f
+//
+// sardanioss/httpcloak issue 124 and bywayhq/phantom PR 120 report the same
+// fixed order on 154.0.8037.58 and .93. Shuffling it, as the 152 and 153
+// profiles rightly do, would be the tell from 154 on.
+var chrome154TrustAnchors = joinTrustAnchors(sortTrustAnchors(mustSplitTrustAnchors(chrome152TrustAnchorsCapture)))
 
 // mustDecodeHex converts a wire-format hex string into extension data. It
 // panics on malformed input, which can only come from a literal in this
@@ -90,34 +110,55 @@ func splitTrustAnchors(capture string) ([][]byte, error) {
 }
 
 // BuildTrustAnchorsPayload turns a captured trust_anchors payload into the data
-// for a fresh extension, with the anchor IDs in a new order.
+// for a fresh extension.
 //
 // The capture is the hex string from the "Unknown extension 51764" data field
-// of a browser fingerprint, starting at the 16-bit list length. Chromium writes
-// those IDs in absl::flat_hash_set iteration order, which holds for the life of
-// the process and differs between processes, so a custom client should call
-// this once and reuse the result rather than reordering per connection. The
-// built in Chrome profiles do exactly that at package load.
+// of a browser fingerprint, starting at the 16-bit list length. Up to Chrome
+// 153, Chromium wrote those IDs in absl::flat_hash_set iteration order, which
+// holds for the life of the process and differs between processes, so the
+// IDs get a new order here; a custom client should call this once and reuse
+// the result rather than reordering per connection. The built in Chrome 152
+// and 153 profiles do exactly that at package load. From Chrome 154 on the
+// list is sorted in every process, so a capture that is already sorted keeps
+// its order: an unsorted hash set order coming out sorted by chance is a one
+// in 28 factorial event for the current list.
 func BuildTrustAnchorsPayload(capture string) ([]byte, error) {
 	records, err := splitTrustAnchors(capture)
 	if err != nil {
 		return nil, err
 	}
 
+	if slices.IsSortedFunc(records, compareTrustAnchors) {
+		return joinTrustAnchors(records), nil
+	}
+
 	return shuffleTrustAnchors(records), nil
 }
 
+// compareTrustAnchors orders records by their ID bytes, past the length
+// byte, which is the order Chrome 154 writes them in.
+func compareTrustAnchors(a, b []byte) int {
+	return bytes.Compare(a[1:], b[1:])
+}
+
+// sortTrustAnchors returns the records in Chrome 154's order.
+func sortTrustAnchors(anchors [][]byte) [][]byte {
+	records := slices.Clone(anchors)
+	slices.SortFunc(records, compareTrustAnchors)
+
+	return records
+}
+
 // shuffleTrustAnchors builds the trust_anchors payload from the given records
-// and gives them a new order. Chromium writes the IDs in absl::flat_hash_set
-// iteration order, which holds for the life of the process and differs between
-// processes. The callers above therefore shuffle once at package load, so one
-// program run keeps one order and two runs differ.
+// and gives them a new order. Chromium up to 153 wrote the IDs in
+// absl::flat_hash_set iteration order, which holds for the life of the process
+// and differs between processes. The callers above therefore shuffle once at
+// package load, so one program run keeps one order and two runs differ.
 //
 // It panics if the random source fails, which crypto/rand does not survive
 // either.
 func shuffleTrustAnchors(anchors [][]byte) []byte {
-	records := make([][]byte, len(anchors))
-	copy(records, anchors)
+	records := slices.Clone(anchors)
 
 	for i := len(records) - 1; i > 0; i-- {
 		j, err := rand.Int(rand.Reader, big.NewInt(int64(i+1)))
@@ -128,6 +169,12 @@ func shuffleTrustAnchors(anchors [][]byte) []byte {
 		records[i], records[j.Int64()] = records[j.Int64()], records[i]
 	}
 
+	return joinTrustAnchors(records)
+}
+
+// joinTrustAnchors writes the records as a trust_anchors payload: the 16-bit
+// list length, then the records in the order given.
+func joinTrustAnchors(records [][]byte) []byte {
 	size := 0
 	for _, record := range records {
 		size += len(record)

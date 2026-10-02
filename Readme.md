@@ -21,10 +21,15 @@ For the full design and request flow, see [ARCHITECTURE.md](./ARCHITECTURE.md).
   (the offset drifts +14 → +15 → +16 where Opera skipped Chromium 129 and 136).
 - **Safari macOS 15.3–26.6** — every point release, grouped by the handshake
   era it belongs to, with the desktop HTTP/2 differences from iOS.
-- **Tor Browser 14.0, 14.5, 15.0** — 15.0 captured from a real install over a
-  live Tor circuit.
-- **Chrome 153 and Edge 153** — captured from the real browsers; Edge is
-  Chrome 152 without the `trust_anchors` extension.
+- **Tor Browser 13.0–16.0** — 15.0 (through 15.0.24) and 16.0 (from the
+  16.0a13 alpha on Firefox 153 ESR) captured from real installs over a live
+  Tor circuit.
+- **Chrome 153–154 and Edge 153–154** — captured from the real browsers;
+  Chrome 154 sends its `trust_anchors` IDs in one sorted order where 153
+  shuffled them per process, and Edge is Chrome without the extension.
+- **Firefox and Tor ECH GREASE** — the AEAD and payload size now follow
+  NSS exactly: AES-128-GCM or ChaCha20-Poly1305, one size per build, never
+  the AES-256-GCM or alternating sizes no real Firefox sends.
 - **Firefox repairs** — the profiles now carry the resumption extensions and
   the real HTTP/2 header-frame priority, instead of accidentally wearing Tor's
   shape and Chrome's H2 priority.
@@ -111,7 +116,7 @@ func main() {
 ```python
 import tls_client
 
-r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_153")
+r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_154")
 print(r.status_code, r.protocol)
 
 with tls_client.Session(preset="firefox_135") as s:

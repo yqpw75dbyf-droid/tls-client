@@ -7,7 +7,7 @@ browser's TLS and HTTP/2 fingerprint.
 ```python
 import tls_client
 
-r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_153")
+r = tls_client.get("https://tls.peet.ws/api/all", preset="chrome_154")
 print(r.status_code, r.protocol)          # 200 HTTP/2.0
 
 with tls_client.Session(preset="firefox_135") as s:
@@ -41,7 +41,7 @@ Top-level `get`, `post`, `put`, `patch`, `delete`, `head`, `options` take a
 `preset=` (a client identifier) and the same keyword arguments as
 `Session.request`.
 
-`Session(preset="chrome_153", ...)` keeps one Go client alive: its cookie jar,
+`Session(preset="chrome_154", ...)` keeps one Go client alive: its cookie jar,
 its connections, its TLS session cache. Reuse it for anything that should look
 like one browsing session.
 

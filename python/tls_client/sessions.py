@@ -37,7 +37,7 @@ def _call(cfunc, payload: dict) -> dict:
 class Session:
     def __init__(
         self,
-        client_identifier: str = "chrome_153",
+        client_identifier: str = "chrome_154",
         *,
         preset: Optional[str] = None,
         ja3_string: Optional[str] = None,
@@ -267,7 +267,7 @@ def _encode_body(method, data, json_body):
 
 
 # -- module-level one-off helpers (httpcloak style) -----------------------
-def request(method: str, url: str, *, preset: str = "chrome_153", **kwargs) -> Response:
+def request(method: str, url: str, *, preset: str = "chrome_154", **kwargs) -> Response:
     session_kwargs = {}
     for key in ("proxy", "proxies", "header_order", "headers", "force_http1",
                 "disable_http3", "random_tls_extension_order", "timeout_seconds"):

@@ -24,9 +24,10 @@ For the full design and request flow, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 - **Tor Browser 13.0–16.0** — 15.0 (through 15.0.24) and 16.0 (from the
   16.0a13 alpha on Firefox 153 ESR) captured from real installs over a live
   Tor circuit.
-- **Chrome 153–154 and Edge 153–154** — captured from the real browsers;
-  Chrome 154 sends its `trust_anchors` IDs in one sorted order where 153
-  shuffled them per process, and Edge is Chrome without the extension.
+- **Chrome 153–154, Edge 153–154 and Brave 154** — captured from the real
+  browsers; Chrome 154 sends its `trust_anchors` IDs in one sorted order
+  where 153 shuffled them per process, and Edge and Brave are Chrome without
+  the extension.
 - **Firefox and Tor ECH GREASE** — the AEAD and payload size now follow
   NSS exactly: AES-128-GCM or ChaCha20-Poly1305, one size per build, never
   the AES-256-GCM or alternating sizes no real Firefox sends.
@@ -130,8 +131,8 @@ The Python package drives a compiled C shared library that is not bundled;
 
 `profiles.MappedTLSClients` (Go) and `tls_client.CLIENT_IDENTIFIERS` (Python)
 list every identifier: Chrome 103–154, Edge 153–154, Firefox 102–148, Safari
-macOS 15.3–26.6 and iOS, Opera 89–136, Tor Browser 13.x–16, Brave, and app
-profiles (Nike, Zalando, MMS, Mesh, okhttp, and others).
+macOS 15.3–26.6 and iOS, Opera 89–136, Tor Browser 13.x–16, Brave 146 and
+154, and app profiles (Nike, Zalando, MMS, Mesh, okhttp, and others).
 
 ### Getting a profile right
 

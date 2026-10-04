@@ -78,9 +78,9 @@ preset to build a profile from a captured fingerprint.
 ## Profiles
 
 `tls_client.CLIENT_IDENTIFIERS` is the full set. It includes Chrome through
-153, Edge 153, Firefox through 148, Safari macOS 15.3–26.6 and iOS, Opera
-92–136, Tor Browser 14.x and 15, Brave, and the app profiles (Nike, Zalando,
-okhttp, and so on).
+154, Edge 153–154, Firefox through 148, Safari macOS 15.3–26.6 and iOS, Opera
+89–136, Tor Browser 13.x–16, Brave 146 and 154, and the app profiles (Nike,
+Zalando, okhttp, and so on).
 
 Three usage rules that are easy to get wrong:
 

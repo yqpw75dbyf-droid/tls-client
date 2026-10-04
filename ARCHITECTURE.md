@@ -122,11 +122,12 @@ first stream id, header-frame priority) and optional HTTP/3 settings.
 
 ```
 profiles.go                     MappedTLSClients: identifier string → ClientProfile
-                                (172 entries; the registry the CFFI layer looks up)
-internal_browser_profiles.go    Chrome, Firefox, Safari desktop/iOS, base Opera
-contributed_browser_profiles.go community-contributed Chrome/Firefox/Brave
+                                (174 entries; the registry the CFFI layer looks up)
+internal_browser_profiles.go    Chrome, Firefox, Safari desktop/iOS, base Opera, Brave 146
+contributed_browser_profiles.go community-contributed Chrome/Firefox
 chrome_profiles.go              Chrome 153, 154 (sorted trust_anchors)
 edge_profiles.go                Edge 153, 154 (Chrome 152 minus trust_anchors)
+brave_profiles.go               Brave 154 (the Edge 154 handshake)
 opera_profiles.go               Opera 92–136 (relabelled Chrome by Chromium base)
 safari_macos_profiles.go        Safari macOS 15.3–26.6 (relabelled iOS captures)
 tor_profiles.go                 Tor Browser 13.x-16 (Firefox ESR minus resumption)

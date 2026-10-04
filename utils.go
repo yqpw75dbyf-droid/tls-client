@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"math/big"
 )
 
 func Int64ToInt(x int64) (int, error) {
@@ -15,15 +14,17 @@ func Int64ToInt(x int64) (int, error) {
 	return int(x), nil
 }
 
-// generateGREASESettingID generates a valid GREASE setting ID
-// GREASE IDs are of the form 0x1f * N + 0x21 where N is random
-// Chrome uses very large N values, producing setting IDs like 57836956465
+// generateGREASESettingID returns a reserved HTTP/3 setting identifier drawn
+// the way Chrome's QUIC stack draws it (quiche,
+// QuicSendControlStream::MaybeSendSettingsFrame): 0x1f * N + 0x21 with N a
+// random 32-bit value. N used to come from [1e9, 1e10), which put 63% of the
+// identifiers above the largest one Chrome can send (0x1f * (2^32-1) + 0x21)
+// and never produced the 23% Chrome sends below 1e9.
 func generateGREASESettingID() uint64 {
-	// Generate large N values similar to Chrome (produces 10-11 digit IDs)
-	// N between 1,000,000,000 and 10,000,000,000
-	nBig, _ := rand.Int(rand.Reader, big.NewInt(9000000000))
-	n := uint64(1000000000) + nBig.Uint64()
-	return 0x1f*n + 0x21
+	var buf [4]byte
+	rand.Read(buf[:])
+
+	return 0x1f*uint64(binary.BigEndian.Uint32(buf[:])) + 0x21
 }
 
 // generateGREASESettingValue generates a random non-zero 32-bit value for GREASE

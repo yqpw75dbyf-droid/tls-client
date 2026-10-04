@@ -129,9 +129,9 @@ The Python package drives a compiled C shared library that is not bundled;
 ## Profiles
 
 `profiles.MappedTLSClients` (Go) and `tls_client.CLIENT_IDENTIFIERS` (Python)
-list every identifier: Chrome 103–153, Edge 153, Firefox 102–148, Safari macOS
-15.3–26.6 and iOS, Opera 89–136, Tor Browser 14.x/15, Brave, and app profiles
-(Nike, Zalando, MMS, Mesh, okhttp, and others).
+list every identifier: Chrome 103–154, Edge 153–154, Firefox 102–148, Safari
+macOS 15.3–26.6 and iOS, Opera 89–136, Tor Browser 13.x–16, Brave, and app
+profiles (Nike, Zalando, MMS, Mesh, okhttp, and others).
 
 ### Getting a profile right
 
@@ -146,6 +146,16 @@ The handshake is only half of looking like a browser. Match the rest too:
 - **Every profile:** send headers that tell the same story — the right
   `User-Agent`, the matching `sec-ch-ua` (or none, for Firefox/Safari/Tor,
   which have no client hints), and the browser's real header order.
+- **HTTP/3:** leave it off (the default) when impersonating a browser. Only
+  the TCP path wears the profile. Over QUIC the TLS hello is Go's default
+  (no ALPS, ECH, certificate compression or `trust_anchors`, and the EMS,
+  renegotiation and point-format extensions Chrome dropped), the transport
+  parameters are quic-go's, and only Chrome 144 and Firefox 147–148 carry
+  HTTP/3 settings; the other profiles send just the datagram setting. Where a
+  GREASE frame is sent it is the same constant (type 31000000033, empty) on
+  every connection, where Chrome draws a new type and payload each time. TLS
+  GREASE over TCP is fine: it is drawn per connection from one seed, the way
+  BoringSSL does.
 
 ## Language bindings
 
